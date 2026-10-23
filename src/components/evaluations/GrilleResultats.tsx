@@ -94,11 +94,11 @@ export function GrilleResultats({ evaluation, eleves }: { evaluation: Evaluation
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-bateau font-titre text-base font-semibold text-white">
             {items.indexOf(ouverte) + 1}
           </span>
-          <span className="min-w-0 flex-1">
+          <span className="min-w-[11rem] flex-1">
             <span className="block font-bold leading-snug text-encre">{ouverte.libelle}</span>
             {ouverte.domaine && <span className="block text-xs font-bold text-brume" title={nomDomaine.get(ouverte.domaine)}>{DOMAINE_COURT[ouverte.domaine] ?? nomDomaine.get(ouverte.domaine)}</span>}
           </span>
-          <span className="flex items-center gap-1.5" title="Remplir les cases vides">
+          <span className="ml-auto flex items-center gap-1.5" title="Remplir les cases vides">
             <PaintBucket className="size-5 text-bateau" aria-hidden />
             {NIVEAUX.map((n) => (
               <button key={n.v} type="button" onClick={() => remplirColonne(ouverte.id, n.v)}
@@ -113,8 +113,8 @@ export function GrilleResultats({ evaluation, eleves }: { evaluation: Evaluation
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-3xl bg-white shadow-doux">
-        <table className="w-full border-separate border-spacing-0 text-sm">
+      <div className="w-fit max-w-full overflow-x-auto rounded-3xl bg-white shadow-doux">
+        <table className="border-separate border-spacing-0 text-sm">
           <thead>
             <tr>
               <th className="sticky left-0 z-10 bg-white px-3 py-2 text-left" aria-label="Élève">
@@ -153,7 +153,7 @@ export function GrilleResultats({ evaluation, eleves }: { evaluation: Evaluation
                         type="button"
                         onClick={() => fixer(el.id, it.id, suivant(v))}
                         onKeyDown={(e) => clavier(e, l, c, el.id, it.id)}
-                        className={clsx('h-10 w-full min-w-[3.25rem] rounded-xl font-titre text-base font-semibold transition active:scale-95',
+                        className={clsx('h-10 w-full min-w-[3.75rem] rounded-xl font-titre text-base font-semibold transition active:scale-95',
                           !n && 'border-2 border-dashed border-trait text-brume/50 hover:border-brume/40')}
                         style={n ? { background: n.fond, color: n.couleur } : undefined}
                         aria-label={`${el.prenom}, ${it.libelle} : ${n ? n.nom : 'pas encore évalué'}`}

@@ -107,7 +107,7 @@ export default function Progressions() {
   const cellule = (m: string, items: Progression[], s: number | null) => {
     const l = items.filter((i) => (i.semaine ?? null) === s)
     return (
-      <div className={clsx('group flex min-h-[3.25rem] flex-col gap-1.5 border-l border-trait p-1.5', s != null && s === semaineActuelle && 'bg-ambre-clair/60')}>
+      <div className={clsx('group flex h-full min-h-[3.25rem] flex-col gap-1.5 border-l border-trait p-1.5', s != null && s === semaineActuelle && 'bg-ambre-clair/60')}>
         {l.map(carte)}
         <button type="button" onClick={() => nouveau(m, s)} aria-label="Ajouter" title="Ajouter"
           className="flex h-6 items-center justify-center rounded-lg text-brume/60 transition hover:bg-encre/5 hover:text-encre sm:opacity-0 sm:group-hover:opacity-100">
