@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    @apply bg-papier font-sans text-encre antialiased;
+    font-size: 16px;
+  }
+  h1, h2, h3 { text-wrap: balance; }
+  input[type='time'], input[type='date'] { min-height: 2.75rem; }
+  :focus-visible { outline-color: #2E5BFF; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* Ruban de la journée : une bande par séance */
+.ruban-segment { transition: flex-grow .3s ease; }

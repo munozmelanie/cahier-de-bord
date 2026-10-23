@@ -1,0 +1,78 @@
+{
+  "openapi": "3.1.0",
+  "info": { "title": "Cahier de bord", "version": "1.0.0", "description": "Lire l'emploi du temps et les progressions de la classe, ajouter des séances au cahier journal et des devoirs." },
+  "servers": [{ "url": "https://zfiinvgniqwwqdbliwwo.supabase.co/functions/v1/gpt" }],
+  "paths": {
+    "/contexte": {
+      "get": {
+        "operationId": "lireContexte",
+        "summary": "Emploi du temps, progressions, séances et devoirs déjà prévus entre deux dates",
+        "parameters": [
+          { "name": "debut", "in": "query", "required": true, "schema": { "type": "string", "format": "date" }, "description": "AAAA-MM-JJ" },
+          { "name": "fin", "in": "query", "required": true, "schema": { "type": "string", "format": "date" }, "description": "AAAA-MM-JJ" }
+        ],
+        "responses": { "200": { "description": "Contexte de la classe", "content": { "application/json": { "schema": { "type": "object" } } } } }
+      }
+    },
+    "/seances": {
+      "post": {
+        "operationId": "ajouterSeances",
+        "summary": "Ajouter des séances au cahier journal",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": {
+            "type": "object",
+            "properties": {
+              "remplacer": { "type": "boolean", "description": "true pour remplacer une séance déjà présente au même horaire" },
+              "seances": { "type": "array", "items": {
+                "type": "object",
+                "required": ["date", "titre"],
+                "properties": {
+                  "date": { "type": "string", "format": "date" },
+                  "debut": { "type": "string", "description": "HH:MM" },
+                  "fin": { "type": "string", "description": "HH:MM" },
+                  "matiere": { "type": "string", "enum": ["francais", "lecture", "maths", "sciences", "histoire", "geographie", "emc", "anglais", "arts", "musique", "eps", "rituels", "informatique", "vie"] },
+                  "titre": { "type": "string" },
+                  "objectif": { "type": "string" },
+                  "deroule": { "type": "string" },
+                  "materiel": { "type": "string" },
+                  "pour_familles": { "type": "string", "description": "Une phrase simple pour le résumé des familles, ou \"-\" pour ne pas l'afficher" },
+                  "a_faire": { "type": "array", "items": { "type": "object", "properties": { "label": { "type": "string" }, "type": { "type": "string", "enum": ["imprimer", "projeter", "distribuer", "preparer"] } } } }
+                }
+              } }
+            },
+            "required": ["seances"]
+          } } }
+        },
+        "responses": { "200": { "description": "Résultat", "content": { "application/json": { "schema": { "type": "object" } } } } }
+      }
+    },
+    "/devoirs": {
+      "post": {
+        "operationId": "ajouterDevoirs",
+        "summary": "Ajouter des devoirs (visibles des familles après la publication de fin de journée)",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": {
+            "type": "object",
+            "properties": {
+              "devoirs": { "type": "array", "items": {
+                "type": "object",
+                "required": ["donne_le", "pour_le", "texte"],
+                "properties": {
+                  "donne_le": { "type": "string", "format": "date" },
+                  "pour_le": { "type": "string", "format": "date" },
+                  "matiere": { "type": "string" },
+                  "texte": { "type": "string" },
+                  "type": { "type": "string", "enum": ["travail", "lecon", "evaluation", "materiel", "info"] }
+                }
+              } }
+            },
+            "required": ["devoirs"]
+          } } }
+        },
+        "responses": { "200": { "description": "Résultat", "content": { "application/json": { "schema": { "type": "object" } } } } }
+      }
+    }
+  }
+}
