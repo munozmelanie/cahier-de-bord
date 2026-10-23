@@ -1,13 +1,14 @@
 import clsx from 'clsx'
 import {
   BookCheck, CalendarDays, CalendarRange, ClipboardCheck, GraduationCap, Layers, ListChecks, LogOut, Menu,
-  MessagesSquare, NotebookPen, Sailboat, Settings, Sparkles, Sun, Users, type LucideIcon,
+  MessagesSquare, NotebookPen, Settings, Sparkles, Sun, Users, type LucideIcon,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { Feuille } from '../components/ui'
 import { BandeauDemo } from '../components/BandeauDemo'
 import { CarteInstallation } from '../components/CarteInstallation'
+import { Logo } from '../components/Logo'
 import { useLectures, useMessages } from '../lib/donnees'
 import { useSession } from '../lib/session'
 import { MODE_DEMO } from '../lib/supabase'
@@ -108,12 +109,8 @@ export function ProfShell() {
       <BandeauDemo />
       {/* Menu latéral (ordinateur) */}
       <aside className={clsx('fixed bottom-0 left-0 z-30 hidden w-60 flex-col border-r border-trait bg-white lg:flex', MODE_DEMO ? 'top-9' : 'top-0')}>
-        <div className="flex items-center gap-3 px-5 pb-5 pt-5">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-encre text-white"><Sailboat className="size-5" /></span>
-          <div className="min-w-0 leading-tight">
-            <p className="truncate font-bold text-encre">Cahier de bord</p>
-            {classe?.nom && <p className="truncate text-xs text-brume">{classe.nom}</p>}
-          </div>
+        <div className="px-5 pb-5 pt-3">
+          <Logo compact sousTitre={classe?.nom} />
         </div>
         <nav className="flex-1 overflow-y-auto px-3" aria-label="Pages">
           <ListeMenu nonLus={nonLus} />

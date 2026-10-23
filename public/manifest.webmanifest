@@ -8,21 +8,16 @@
   "theme_color": "#3358E0",
   "icons": [
     {
-      "src": "/cahier-de-bord/icone-192.png",
+      "src": "/cahier-de-bord/icone-cahier-de-bord-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/cahier-de-bord/icone-512.png",
+      "src": "/cahier-de-bord/icone-cahier-de-bord.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
-    },
-    {
-      "src": "/cahier-de-bord/icone.svg",
-      "sizes": "any",
-      "type": "image/svg+xml"
     }
   ],
   "id": "/cahier-de-bord/",

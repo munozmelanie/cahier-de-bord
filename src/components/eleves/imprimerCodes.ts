@@ -9,10 +9,11 @@ const echapper = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<
 export function imprimerCodes(eleves: Eleve[], classe: Classe) {
   const w = window.open('', '_blank')
   if (!w) return false
+  const logo = new URL('icone-cahier-de-bord.png', new URL(import.meta.env.BASE_URL, window.location.origin)).href
   const entete = [classe.nom, classe.enseignant_nom, classe.ecole].filter(Boolean).map((x) => echapper(String(x))).join(' · ')
   const coupon = (e: Eleve) => `
     <div class="coupon">
-      <div class="haut"><span class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 18H2a4 4 0 0 0 4 4h12a4 4 0 0 0 4-4Z"/><path d="M21 14 10 2 3 14h18Z"/><path d="M10 2v16"/></svg></span><span><b>Cahier de bord</b><br><small>${entete}</small></span></div>
+      <div class="haut"><img class="logo" src="${echapper(logo)}" alt="" /><span><b>Cahier de bord</b><br><small>${entete}</small></span></div>
       <div class="corps">
         <div>
           <p class="prenom">${echapper(e.prenom)}</p>
@@ -38,7 +39,7 @@ export function imprimerCodes(eleves: Eleve[], classe: Classe) {
   .coupon { border: 1px dashed #A3ACC2; padding: 5mm 6mm; display: flex; flex-direction: column; gap: 2mm; break-inside: avoid; }
   .haut { display: flex; align-items: center; gap: 3mm; font-size: 11pt; line-height: 1.2; }
   .haut small { color: #6A7593; font-size: 8.5pt; }
-  .logo { display: inline-flex; width: 9mm; height: 9mm; border-radius: 3mm; background: #3358E0; align-items: center; justify-content: center; }
+  .logo { display: block; width: 9mm; height: 9mm; object-fit: contain; flex-shrink: 0; }
   .corps { display: grid; grid-template-columns: 1fr 30mm; gap: 4mm; align-items: center; flex: 1; }
   .prenom { margin: 0 0 1.5mm; font-size: 17pt; font-weight: 700; }
   .qr svg { width: 30mm; height: 30mm; display: block; }

@@ -19,6 +19,7 @@ const echapper = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<
 function imprimerQr(classe: Classe, lien: string, svg: string) {
   const w = window.open('', '_blank')
   if (!w) return false
+  const logo = new URL('icone-cahier-de-bord.png', new URL(import.meta.env.BASE_URL, window.location.origin)).href
   const qui = [classe.nom, classe.enseignant_nom].filter(Boolean).map((x) => echapper(String(x))).join(', ')
   w.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>QR code remplaçant</title>
 <style>
@@ -27,7 +28,7 @@ function imprimerQr(classe: Classe, lien: string, svg: string) {
   body { margin: 0; font-family: Figtree, Arial, sans-serif; color: #1C2333; }
   .carte { width: 150mm; margin: 0 auto; padding: 14mm 12mm; border: 1.2mm solid #1C2333; border-radius: 8mm; text-align: center; }
   .haut { display: flex; align-items: center; justify-content: center; gap: 3mm; font-size: 13pt; font-weight: 700; }
-  .logo { display: inline-flex; width: 10mm; height: 10mm; border-radius: 3mm; background: #1C2333; align-items: center; justify-content: center; }
+  .logo { display: block; width: 10mm; height: 10mm; object-fit: contain; flex-shrink: 0; }
   h1 { margin: 9mm 0 2mm; font-size: 30pt; line-height: 1.1; }
   .sous { margin: 0 0 9mm; font-size: 14pt; color: #475467; }
   .qr { width: 95mm; height: 95mm; margin: 0 auto; }
@@ -36,7 +37,7 @@ function imprimerQr(classe: Classe, lien: string, svg: string) {
   .lien { margin: 0; font-size: 8pt; color: #667085; word-break: break-all; }
 </style></head><body>
 <div class="carte">
-  <div class="haut"><span class="logo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 18H2a4 4 0 0 0 4 4h12a4 4 0 0 0 4-4Z"/><path d="M21 14 10 2 3 14h18Z"/><path d="M10 2v16"/></svg></span>Cahier de bord</div>
+  <div class="haut"><img class="logo" src="${echapper(logo)}" alt="" />Cahier de bord</div>
   <h1>Remplaçant·e ?</h1>
   <p class="sous">Scannez ce code pour voir la journée prévue.</p>
   <div class="qr">${svg}</div>

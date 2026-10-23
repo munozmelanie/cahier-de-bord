@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
-import { BookCheck, ChevronLeft, ChevronRight, Link2Off, Printer, Sailboat, StickyNote, Sun } from 'lucide-react'
+import { BookCheck, ChevronLeft, ChevronRight, Link2Off, Printer, StickyNote, Sun } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { CarteInfo } from '../components/CarteInfo'
+import { LogoIcone } from '../components/Logo'
 import { Chronologie } from '../components/journal/Chronologie'
 import { imprimerCahierJournal } from '../components/journal/impression'
 import { trierSeances } from '../components/journal/outils'
@@ -70,7 +71,7 @@ export default function Remplacant() {
     <div className="min-h-dvh">
       <header className="border-b border-trait bg-white">
         <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3">
-          <span className="flex size-9 items-center justify-center rounded-xl bg-encre text-white"><Sailboat className="size-5" /></span>
+          <LogoIcone className="size-11" />
           <div className="min-w-0 leading-tight">
             <p className="font-bold text-encre">Cahier journal</p>
             {r && <p className="truncate text-xs text-brume">{[r.classe.nom, r.classe.enseignant_nom].filter(Boolean).join(', ')}</p>}
