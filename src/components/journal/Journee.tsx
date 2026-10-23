@@ -1,8 +1,8 @@
-import { BookCheck, CalendarPlus, Coffee, MessagesSquare, Plus, Printer, Send, Sparkles, Sun } from 'lucide-react'
+import { BookCheck, CalendarPlus, MessagesSquare, Plus, Printer, Send, Sparkles, Sun } from 'lucide-react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useDevoirsDonnes, useEcrire, useEdt, useLectures, useMessages, useRafraichir, useSeances } from '../../lib/donnees'
-import { aujourdhui, estJourClasse, fmtHeure, minutes, numJour, periodeDe, vacancesDe } from '../../lib/dates'
+import { aujourdhui, estJourClasse, numJour, periodeDe, vacancesDe } from '../../lib/dates'
 import { useClasse, useSession } from '../../lib/session'
 import type { Devoir, Seance } from '../../lib/types'
 import { AssistantIA, type DemandeIA } from '../AssistantIA'
@@ -11,7 +11,7 @@ import { CarteDevoir } from '../devoirs/CarteDevoir'
 import { DevoirEditeur } from '../devoirs/DevoirEditeur'
 import { ResumeCarte } from '../resume/ResumeCarte'
 import { Bouton, BoutonIcone, Chargement, Entete, Vide, useToast } from '../ui'
-import { CarteSeance } from './CarteSeance'
+import { Chronologie } from './Chronologie'
 import { remplirDepuisEdt, seanceEnCours, trierSeances } from './outils'
 import { iconeAFaire, SeanceEditeur, type BrouillonSeance } from './SeanceEditeur'
 
@@ -79,12 +79,6 @@ export function Journee({ date, titre, sousTitre, actions, retour }: { date: str
   }
 
 
-  // Séances et pauses dans l'ordre de la journée
-  const fil: ({ t: 'seance'; s: Seance } | { t: 'pause'; libelle: string; debut: string })[] = [
-    ...liste.map((s) => ({ t: 'seance' as const, s })),
-    ...(liste.length ? pauses.map((p) => ({ t: 'pause' as const, libelle: p.libelle ?? 'Pause', debut: p.debut })) : []),
-  ].sort((a, b) => minutes(a.t === 'seance' ? a.s.debut : a.debut) - minutes(b.t === 'seance' ? b.s.debut : b.debut))
-
   const devoirsDuJour = donnes.data ?? []
 
   return (
@@ -111,16 +105,8 @@ export function Journee({ date, titre, sousTitre, actions, retour }: { date: str
             })}
           </div>
           {seances.isLoading ? <Chargement /> : liste.length ? (
-            <div className="flex flex-col gap-2">
-              {fil.map((x, i) => x.t === 'seance' ? (
-                <CarteSeance key={x.s.id} s={x.s} enCours={enCours?.id === x.s.id} onOuvrir={() => setEdition(x.s)} onStatut={(st) => statut(x.s, st)} />
-              ) : (
-                <div key={`p${i}`} className="flex items-center gap-2 px-3 py-0.5 text-xs font-bold text-brume/80" title={x.libelle}>
-                  <Coffee className="size-4" /> <span className="tabular-nums">{fmtHeure(x.debut)}</span>
-                  <span className="h-px flex-1 bg-trait" />
-                </div>
-              ))}
-            </div>
+            <Chronologie seances={liste} pauses={pauses} maintenant={estAujourdhui ? maintenant.getHours() * 60 + maintenant.getMinutes() : null}
+              enCoursId={enCours?.id} onOuvrir={(x) => setEdition(x)} onStatut={statut} />
           ) : vacances || !estJourClasse(date, classe.reglages) ? (
             <Vide icone={Sun} texte={vacances ? vacances.nom : 'Pas classe'} />
           ) : (

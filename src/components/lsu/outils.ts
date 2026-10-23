@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { LSU, NIVEAUX } from '../../lib/matieres'
+import { REFERENTIEL_LSU } from '../../lib/referentielLsu'
 import type { BilanLsu, Evaluation, Reglages } from '../../lib/types'
 
 /** Matière de l'appli utilisée pour l'icône et la couleur d'une matière du LSU */
@@ -107,4 +108,29 @@ export const DOMAINE_COURT: Record<string, string> = {
   'fr.oral': 'Oral', 'fr.lecture': 'Lecture', 'fr.ecriture': 'Écriture', 'fr.langue': 'Langue',
   'ma.nombres': 'Nombres et calcul', 'ma.grandeurs': 'Grandeurs et mesures', 'ma.espace': 'Espace et géométrie',
   'lv.ecouter': 'Écouter', 'lv.lire': 'Lire', 'lv.parler': 'Parler', 'lv.ecrire': 'Écrire', 'lv.dialoguer': 'Dialoguer',
+  'lv.culture': 'Culture', 'ma.competences': 'Compétences', 'hg.themes': 'Thèmes', 'st.themes': 'Thèmes',
+}
+
+// ───────────── Éléments du programme travaillés (lsu_classe.elements : une ligne par élément) ─────────────
+
+/** Lignes non vides du texte enregistré */
+export const lignesElements = (texte: string | null | undefined) =>
+  (texte ?? '').split('\n').map((l) => l.trim()).filter(Boolean)
+
+/** Libellés officiels d'une matière du LSU, dans l'ordre du référentiel */
+export const libellesOfficiels = (matiereLsu: string) =>
+  REFERENTIEL_LSU.find((m) => m.matiere === matiereLsu)?.sousDomaines.flatMap((sd) => sd.elements.map((el) => el.libelle)) ?? []
+
+/** Une ligne identique à un libellé officiel = élément coché ; les autres = éléments libres */
+export function analyserElements(matiereLsu: string, texte: string | null | undefined) {
+  const officiels = new Set(libellesOfficiels(matiereLsu))
+  const coches = new Set<string>()
+  const libres: string[] = []
+  for (const l of lignesElements(texte)) (officiels.has(l) ? coches.add(l) : libres.push(l))
+  return { coches, libres }
+}
+
+/** Texte à enregistrer : éléments cochés dans l'ordre du référentiel, puis éléments libres */
+export function composerElements(matiereLsu: string, coches: Set<string>, libres: string[]) {
+  return [...libellesOfficiels(matiereLsu).filter((l) => coches.has(l)), ...libres.map((l) => l.trim()).filter(Boolean)].join('\n')
 }

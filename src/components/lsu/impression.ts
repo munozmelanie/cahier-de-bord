@@ -1,7 +1,15 @@
 import { fmtJourCourt } from '../../lib/dates'
 import { LSU, NIVEAUX } from '../../lib/matieres'
 import type { BilanLsu, Classe, Eleve, LsuBilan, LsuClasse } from '../../lib/types'
-import { echapper } from './outils'
+import { echapper, lignesElements } from './outils'
+
+/** Éléments travaillés : une puce par ligne */
+const listeElements = (texte: string | null | undefined) => {
+  const l = lignesElements(texte)
+  if (!l.length) return ''
+  if (l.length === 1) return echapper(l[0])
+  return `<ul>${l.map((x) => `<li>${echapper(x)}</li>`).join('')}</ul>`
+}
 
 /** Livret d'un élève, présenté comme le bilan périodique du LSU */
 function livretHtml(classe: Classe, bilan: BilanLsu, eleve: Eleve, ligne: LsuBilan | undefined, elements: LsuClasse | undefined) {
@@ -11,7 +19,7 @@ function livretHtml(classe: Classe, bilan: BilanLsu, eleve: Eleve, ligne: LsuBil
       const pos = ligne?.positions?.[d.id]
       const cases = NIVEAUX.map((n) => `<td class="niv">${pos === n.v ? '&#10006;' : ''}</td>`).join('')
       const debut = i === 0
-        ? `<td class="mat" rowspan="${rangs}"><b>${echapper(m.nom)}</b></td><td class="elem" rowspan="${rangs}">${echapper(elements?.elements?.[m.id])}</td>`
+        ? `<td class="mat" rowspan="${rangs}"><b>${echapper(m.nom)}</b></td><td class="elem" rowspan="${rangs}">${listeElements(elements?.elements?.[m.id])}</td>`
         : ''
       const fin = i === 0 ? `<td class="app" rowspan="${rangs}">${echapper(ligne?.appreciations?.[m.id])}</td>` : ''
       const dom = rangs > 1 ? `<td class="dom">${echapper(d.nom)}</td>` : `<td class="dom"></td>`
@@ -70,6 +78,7 @@ const STYLE = `
   table { width: 100%; border-collapse: collapse; }
   th, td { border: 1px solid #888; padding: 3px 5px; vertical-align: top; }
   th { background: #EEF1F7; font-size: 8pt; }
+  .elem ul { margin: 0; padding-left: 12px; } .elem li { margin: 0 0 1px; font-size: 8pt; }
   .mat { width: 15%; } .elem { width: 24%; } .dom { width: 13%; font-size: 8pt; } .app { width: 30%; }
   .niv { width: 4.5%; text-align: center; vertical-align: middle; font-size: 11pt; }
   .vertical { height: 26mm; vertical-align: bottom; }

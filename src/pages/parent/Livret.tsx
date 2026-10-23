@@ -1,6 +1,6 @@
 import { CalendarX2, Flag, GraduationCap, HandHelping, ListChecks, Quote } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { ABREV, bilansDe, DOMAINE_COURT, ICONE_LSU, NOM_COURT_LSU } from '../../components/lsu/outils'
+import { ABREV, bilansDe, DOMAINE_COURT, ICONE_LSU, lignesElements, NOM_COURT_LSU } from '../../components/lsu/outils'
 import { Chargement, Onglets, Vide } from '../../components/ui'
 import { useLsuClasse, useTable } from '../../lib/donnees'
 import { LSU, NIVEAUX, matiere, niveau } from '../../lib/matieres'
@@ -84,7 +84,7 @@ export default function Livret() {
           const mat = matiere(ICONE_LSU[m.id])
           const Icone = mat.icone
           const unSeul = m.domaines.length === 1
-          const travaille = el?.elements?.[m.id]?.trim()
+          const travaille = lignesElements(el?.elements?.[m.id])
           return (
             <section key={m.id} className="flex flex-col gap-3 rounded-[26px] p-4" style={{ background: mat.fond }} aria-label={m.nom}>
               <div className="flex items-center gap-3">
@@ -93,7 +93,7 @@ export default function Livret() {
                 </span>
                 <span className="min-w-0 flex-1 truncate font-titre text-lg font-semibold text-encre" title={m.nom}>{NOM_COURT_LSU[m.id] ?? m.nom}</span>
                 {unSeul && doms[0] && <Pastille v={livret.positions[doms[0].id]} />}
-                {travaille && (
+                {travaille.length > 0 && (
                   <button type="button" onClick={() => setOuverts((o) => ({ ...o, [m.id]: !o[m.id] }))} aria-expanded={!!ouverts[m.id]}
                     aria-label="Ce qui a été travaillé" title="Ce qui a été travaillé"
                     className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white/70 transition hover:bg-white" style={{ color: mat.couleur }}>
@@ -112,7 +112,16 @@ export default function Livret() {
                 </ul>
               )}
               {app && <p className="whitespace-pre-line rounded-2xl bg-white/90 px-3 py-2.5 leading-relaxed text-encre">{app}</p>}
-              {travaille && ouverts[m.id] && <p className="text-sm leading-relaxed" style={{ color: mat.couleur }}>{travaille}</p>}
+              {travaille.length > 0 && ouverts[m.id] && (
+                <ul className="flex flex-col gap-1 text-sm font-bold leading-snug" style={{ color: mat.couleur }}>
+                  {travaille.map((t, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="mt-1.5 size-1.5 shrink-0 rounded-full" style={{ background: mat.couleur }} />
+                      <span>{t}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </section>
           )
         })}

@@ -69,6 +69,7 @@ export const LSU: MatiereLsu[] = [
       { id: 'lv.parler', nom: 'Parler en continu' },
       { id: 'lv.ecrire', nom: 'Écrire' },
       { id: 'lv.dialoguer', nom: 'Réagir et dialoguer' },
+      { id: 'lv.culture', nom: 'Découvrir les aspects culturels de la langue' },
     ],
   },
   { id: 'ap', nom: 'Arts plastiques', domaines: [{ id: 'ap', nom: 'Arts plastiques' }] },

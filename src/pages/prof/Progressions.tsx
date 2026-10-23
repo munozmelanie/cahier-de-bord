@@ -232,7 +232,7 @@ export default function Progressions() {
               return (
                 <button key={st} type="button" role="radio" aria-checked={actif} onClick={() => setEdition((x) => ({ ...x, statut: st }))}
                   className={clsx('inline-flex h-9 items-center gap-2 rounded-full px-3 text-sm font-bold transition', actif ? 'bg-encre text-white' : 'border border-trait bg-white text-encre')}>
-                  <RondStatut statut={st} couleur={actif ? '#fff' : c} taille={16} /> {STATUTS_PROG[st].label}
+                  <RondStatut statut={st} couleur={c} taille={16} /> {STATUTS_PROG[st].label}
                 </button>
               )
             })}
