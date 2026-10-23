@@ -4,7 +4,7 @@ import { Logo } from '../../components/Logo'
 import { Bouton, Champ, Erreur, Onglets, Saisie } from '../../components/ui'
 import { db, MODE_DEMO, traduireErreur } from '../../lib/supabase'
 import { useSession } from '../../lib/session'
-import { ChampsCode } from './Relier'
+import { ChampsCode, nomComplet } from './Relier'
 
 export default function Connexion() {
   const [mode, setMode] = useState<'connexion' | 'inscription'>('connexion')
@@ -81,6 +81,7 @@ function FormInscription() {
   const [email, setEmail] = useState('')
   const [mdp, setMdp] = useState('')
   const [code, setCode] = useState('')
+  const [prenom, setPrenom] = useState('')
   const [nom, setNom] = useState('')
   const [lien, setLien] = useState('')
   const [erreur, setErreur] = useState('')
@@ -95,11 +96,11 @@ function FormInscription() {
       if (error) throw new Error(traduireErreur(error.message))
       if (!data.session) {
         // Confirmation par e-mail activée : le code sera demandé à la première connexion
-        try { localStorage.setItem('cdb-code-en-attente', JSON.stringify({ code, nom, lien })) } catch { /* rien */ }
+        try { localStorage.setItem('cdb-code-en-attente', JSON.stringify({ code, prenom, nomFamille: nom, lien })) } catch { /* rien */ }
         setInfo('Ouvre le lien reçu par e-mail')
         return
       }
-      const r = await db.rpc('rejoindre', { code, nom, lien })
+      const r = await db.rpc('rejoindre', { code, nom: nomComplet(prenom, nom), lien })
       if (r.error) throw new Error(traduireErreur(r.error.message))
       if (r.data?.erreur) throw new Error(r.data.erreur)
       await rafraichir()
@@ -112,7 +113,7 @@ function FormInscription() {
 
   return (
     <form onSubmit={envoyer} className="flex flex-col gap-4">
-      <ChampsCode code={code} setCode={setCode} nom={nom} setNom={setNom} lien={lien} setLien={setLien} />
+      <ChampsCode code={code} setCode={setCode} prenom={prenom} setPrenom={setPrenom} nom={nom} setNom={setNom} lien={lien} setLien={setLien} />
       <Champ label="E-mail">{(id) => <Saisie id={id} type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />}</Champ>
       <Champ label="Mot de passe">{(id) => <Saisie id={id} type="password" autoComplete="new-password" minLength={6} required placeholder="6 caractères min." value={mdp} onChange={(e) => setMdp(e.target.value)} />}</Champ>
       {erreur && <Erreur message={erreur} />}

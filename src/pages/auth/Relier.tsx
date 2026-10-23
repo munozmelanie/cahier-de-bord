@@ -5,31 +5,57 @@ import { Bouton, Champ, Erreur, Liste, Saisie } from '../../components/ui'
 import { db, traduireErreur } from '../../lib/supabase'
 import { useSession } from '../../lib/session'
 
+/** Code à 12 caractères = code enseignant ; à 8 = code famille */
+export const estCodeEnseignant = (code: string) => code.replace(/[^A-Za-z0-9]/g, '').length === 12
+
+/** Nom affiché : prénom + nom */
+export const nomComplet = (prenom: string, nom: string) => [prenom.trim(), nom.trim()].filter(Boolean).join(' ')
+
 export function ChampsCode(p: {
-  code: string; setCode: (v: string) => void; nom: string; setNom: (v: string) => void; lien: string; setLien: (v: string) => void
+  code: string; setCode: (v: string) => void
+  prenom: string; setPrenom: (v: string) => void
+  nom: string; setNom: (v: string) => void
+  lien: string; setLien: (v: string) => void
 }) {
+  const enseignant = estCodeEnseignant(p.code)
+  // Code enseignant : le lien se met tout seul
+  useEffect(() => {
+    if (enseignant && !p.lien) p.setLien('Enseignante')
+    if (!enseignant && /^Enseignant/.test(p.lien)) p.setLien('')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enseignant])
   return (
     <>
       <Champ label="Code">
         {(id) => (
           <Saisie id={id} required value={p.code} onChange={(e) => p.setCode(e.target.value.toUpperCase())}
             placeholder="ABCD-EFGH" autoCapitalize="characters" autoComplete="off" spellCheck={false}
-            className="text-center font-titre text-2xl tracking-[0.2em]" />
+            className="text-center text-2xl font-semibold tracking-[0.2em]" />
         )}
       </Champ>
-      <div className="grid grid-cols-[1fr_auto] gap-3">
-        <Champ label="Prénom">{(id) => <Saisie id={id} value={p.nom} onChange={(e) => p.setNom(e.target.value)} autoComplete="given-name" />}</Champ>
-        <Champ label="Lien">
-          {(id) => (
-            <Liste id={id} value={p.lien} onChange={(e) => p.setLien(e.target.value)}>
-              <option value="">—</option>
-              <option>Maman</option>
-              <option>Papa</option>
-              <option>Responsable</option>
-            </Liste>
-          )}
-        </Champ>
+      <div className="grid grid-cols-2 gap-3">
+        <Champ label="Prénom">{(id) => <Saisie id={id} value={p.prenom} onChange={(e) => p.setPrenom(e.target.value)} autoComplete="given-name" />}</Champ>
+        <Champ label="Nom">{(id) => <Saisie id={id} value={p.nom} onChange={(e) => p.setNom(e.target.value)} autoComplete="family-name" />}</Champ>
       </div>
+      <Champ label="Vous êtes">
+        {(id) => (
+          <Liste id={id} value={p.lien} onChange={(e) => p.setLien(e.target.value)}>
+            <option value="">Choisir</option>
+            {enseignant ? (
+              <>
+                <option>Enseignante</option>
+                <option>Enseignant</option>
+              </>
+            ) : (
+              <>
+                <option>Maman</option>
+                <option>Papa</option>
+                <option>Responsable légal</option>
+              </>
+            )}
+          </Liste>
+        )}
+      </Champ>
     </>
   )
 }
@@ -38,6 +64,7 @@ export function ChampsCode(p: {
 export default function Relier() {
   const { rafraichir, deconnexion, email } = useSession()
   const [code, setCode] = useState('')
+  const [prenom, setPrenom] = useState('')
   const [nom, setNom] = useState('')
   const [lien, setLien] = useState('')
   const [erreur, setErreur] = useState('')
@@ -48,7 +75,7 @@ export default function Relier() {
       const brut = localStorage.getItem('cdb-code-en-attente')
       if (brut) {
         const v = JSON.parse(brut)
-        setCode(v.code ?? ''); setNom(v.nom ?? ''); setLien(v.lien ?? '')
+        setCode(v.code ?? ''); setPrenom(v.prenom ?? v.nom ?? ''); setNom(v.nomFamille ?? ''); setLien(v.lien ?? '')
       }
     } catch { /* rien */ }
   }, [])
@@ -56,7 +83,7 @@ export default function Relier() {
   async function envoyer(e: FormEvent) {
     e.preventDefault()
     setErreur(''); setEnCours(true)
-    const r = await db.rpc('rejoindre', { code, nom, lien })
+    const r = await db.rpc('rejoindre', { code, nom: nomComplet(prenom, nom), lien })
     setEnCours(false)
     if (r.error) return setErreur(traduireErreur(r.error.message))
     if (r.data?.erreur) return setErreur(r.data.erreur)
@@ -73,7 +100,7 @@ export default function Relier() {
             <span className="flex size-11 items-center justify-center rounded-2xl bg-bateau-clair text-bateau"><KeyRound className="size-6" /></span>
             <p className="min-w-0 truncate text-sm font-semibold text-brume">{email}</p>
           </div>
-          <ChampsCode code={code} setCode={setCode} nom={nom} setNom={setNom} lien={lien} setLien={setLien} />
+          <ChampsCode code={code} setCode={setCode} prenom={prenom} setPrenom={setPrenom} nom={nom} setNom={setNom} lien={lien} setLien={setLien} />
           {erreur && <Erreur message={erreur} />}
           <Bouton type="submit" taille="l" icone={KeyRound} enCours={enCours}>Valider</Bouton>
           <Bouton type="button" variante="fantome" icone={LogOut} onClick={deconnexion}>Déconnexion</Bouton>
