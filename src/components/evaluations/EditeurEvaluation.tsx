@@ -1,12 +1,14 @@
-import { Plus, Save, Trash2 } from 'lucide-react'
+import { Library, Plus, Save, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Bouton, BoutonIcone, Champ, ChoixMatiere, Feuille, Liste, Saisie, useToast } from '../ui'
 import { aujourdhui, periodeDe } from '../../lib/dates'
 import { useEcrire } from '../../lib/donnees'
-import { LSU } from '../../lib/matieres'
+import { LSU, matiere as infoMatiere } from '../../lib/matieres'
+import type { ElementProgramme, SousDomaine } from '../../lib/referentielLsu'
 import { useClasse } from '../../lib/session'
 import type { Evaluation, ItemEval } from '../../lib/types'
 import { DOMAINE_PAR_MATIERE } from '../lsu/outils'
+import { ChoixReferentiel } from './ChoixReferentiel'
 
 const nouvelId = () => Math.random().toString(36).slice(2, 9)
 
@@ -38,6 +40,7 @@ export function EditeurEvaluation({ ouverte, evaluation, onFermer, onCree }: {
   const [titre, setTitre] = useState('')
   const [periode, setPeriode] = useState<string>('')
   const [items, setItems] = useState<ItemEval[]>([])
+  const [referentiel, setReferentiel] = useState(false)
 
   useEffect(() => {
     if (!ouverte) return
@@ -47,6 +50,7 @@ export function EditeurEvaluation({ ouverte, evaluation, onFermer, onCree }: {
     setTitre(evaluation?.titre ?? '')
     setPeriode(evaluation?.periode ?? periodeDe(d, classe.reglages)?.id ?? '')
     setItems(evaluation?.items?.length ? evaluation.items : [{ id: nouvelId(), libelle: '', domaine: null }])
+    setReferentiel(false)
   }, [ouverte, evaluation, classe.reglages])
 
   const changerMatiere = (m: string) => {
@@ -60,6 +64,14 @@ export function EditeurEvaluation({ ouverte, evaluation, onFermer, onCree }: {
     if (p) setPeriode(p)
   }
   const majItem = (i: number, patch: Partial<ItemEval>) => setItems((l) => l.map((it, j) => (j === i ? { ...it, ...patch } : it)))
+  /** Référentiel : ajoute la compétence (dans la ligne vide s'il y en a une) ou la retire si elle est déjà là */
+  const basculerReferentiel = (el: ElementProgramme, sd: SousDomaine) => setItems((l) => {
+    const i = l.findIndex((it) => it.libelle.trim() === el.libelle)
+    if (i >= 0) return l.length > 1 ? l.filter((_, j) => j !== i) : [{ ...l[0], libelle: '', domaine: null }]
+    const item = { id: nouvelId(), libelle: el.libelle, domaine: sd.positionne ? sd.id : null }
+    const vide = l.findIndex((it) => !it.libelle.trim())
+    return vide >= 0 ? l.map((it, j) => (j === vide ? { ...item, id: it.id } : it)) : [...l, item]
+  })
 
   async function enregistrer() {
     const propres = items.map((it) => ({ ...it, libelle: it.libelle.trim() })).filter((it) => it.libelle)
@@ -124,10 +136,17 @@ export function EditeurEvaluation({ ouverte, evaluation, onFermer, onCree }: {
               <BoutonIcone icone={Trash2} label="Retirer" onClick={() => setItems((l) => l.filter((_, j) => j !== i))} disabled={items.length === 1} />
             </div>
           ))}
-          <Bouton variante="doux" icone={Plus} className="self-start"
-            onClick={() => setItems((l) => [...l, { id: nouvelId(), libelle: '', domaine: (matiere && DOMAINE_PAR_MATIERE[matiere]) || l[l.length - 1]?.domaine || null }])}>
-            Compétence
-          </Bouton>
+          {referentiel && (
+            <ChoixReferentiel matiereLsu={infoMatiere(matiere).lsu} choisis={new Set(items.map((it) => it.libelle.trim()))}
+              onBasculer={basculerReferentiel} onFermer={() => setReferentiel(false)} />
+          )}
+          <div className="flex items-center gap-2">
+            <Bouton variante="doux" icone={Plus}
+              onClick={() => setItems((l) => [...l, { id: nouvelId(), libelle: '', domaine: (matiere && DOMAINE_PAR_MATIERE[matiere]) || l[l.length - 1]?.domaine || null }])}>
+              Compétence
+            </Bouton>
+            {!referentiel && <BoutonIcone icone={Library} label="Choisir dans le référentiel du LSU" variante="doux" onClick={() => setReferentiel(true)} />}
+          </div>
         </div>
       </div>
     </Feuille>
