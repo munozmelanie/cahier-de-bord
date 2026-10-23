@@ -199,7 +199,11 @@ export function demoDonnees(): Record<string, Record<string, any>[]> {
     parents: [{ eleve_id: DEMO_IDS.enfant, user_id: DEMO_IDS.parent, nom_affiche: 'Claire', lien: 'Maman', created_at: now }],
     edt_creneaux: edt,
     seances, devoirs, resumes, messages, agenda, progressions, sequences, sequence_etapes: etapes, evaluations, lsu_bilans,
-    lsu_classe: [{ classe_id: C, bilan: 'T1', elements: { fr: 'Lecture de textes variés ; grammaire du groupe nominal ; le présent.', ma: 'Nombres entiers ; fractions ; addition et soustraction.' }, projets: 'Chorale ; parcours Moyen Âge.' }],
+    lsu_classe: [{ classe_id: C, bilan: 'T1', elements: {
+      fr: ['Lire avec fluidité', 'Comprendre un texte littéraire et l\'interpréter', 'Observer le fonctionnement du verbe et l\'orthographier', 'Produire des écrits variés'].join('\n'),
+      ma: ['Utiliser et représenter les grands nombres entiers, des fractions simples, les nombres décimaux', 'Calculer avec des nombres entiers et des nombres décimaux', 'Chercher'].join('\n'),
+      hg: ['Se repérer dans le temps : construire des repères historiques', 'Histoire : le Moyen Âge', 'Géographie : se nourrir'].join('\n'),
+    }, projets: 'Chorale ; parcours Moyen Âge.' }],
     lectures: [],
   }
 }
