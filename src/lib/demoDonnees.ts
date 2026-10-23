@@ -1,5 +1,6 @@
 // Données fictives du mode démo (aucun vrai élève), calées sur le calendrier 2026-2027 zone B
 import { decaler, estJourClasse, iso, joursSemaine, lundiDe, jourClasseSuivant, numJour, periodeCourante } from './dates'
+import { BLOCS_LSU } from './referentielLsu'
 import type { Reglages } from './types'
 
 export const DEMO_IDS = {
@@ -11,6 +12,8 @@ export const DEMO_IDS = {
 
 export const REGLAGES_2026: Reglages = {
   jours: [1, 2, 4, 5],
+  directeur_nom: 'M. Durand',
+  mot_remplacant: 'Les fiches du jour sont dans la bannette bleue, sur le bureau.\nL\'emploi du temps et la liste de la classe sont affichés près du tableau.',
   heure_resume: '16:45',
   resume_auto: true,
   periodes: [
@@ -179,16 +182,22 @@ export function demoDonnees(): Record<string, Record<string, any>[]> {
     { id: 'demo-et-2', classe_id: C, sequence_id: 'demo-seq-1', numero: 2, titre: 'Les paysans et l\'église du village', objectif: 'Décrire la vie des paysans.', duree: 90, deroule: 'Étude des Très Riches Heures du duc de Berry.', materiel: 'Reproductions', differenciation: null, evaluation: null, created_at: now },
   ]
 
-  const items = [{ id: 'i1', libelle: 'Reconnaître un déterminant', domaine: 'fr.langue' }, { id: 'i2', libelle: 'Accorder dans le groupe nominal', domaine: 'fr.langue' }]
+  const items = [
+    { id: 'i1', libelle: 'Reconnaître un déterminant', domaine: 'fr.grammaire', element: 'fr.grammaire|Identifier la nature des mots (déterminant, nom, adjectif, pronom, verbe, adverbe)' },
+    { id: 'i2', libelle: 'Accorder dans le groupe nominal', domaine: 'fr.grammaire', element: 'fr.grammaire|Réaliser les accords dans le groupe nominal' },
+  ]
   const resultats: Record<string, Record<string, number>> = {}
   eleves.forEach((e, i) => { resultats[e.id] = { i1: 1 + ((i * 7) % 4), i2: 1 + ((i * 5 + 2) % 4) } })
   const evaluations = [{ id: 'demo-ev-1', classe_id: C, date: decaler(auj, -3), matiere: 'francais', titre: 'Les déterminants', periode, items, resultats, created_at: now, updated_at: now }]
 
   const lsu_bilans = eleves.slice(0, 12).map((e, i) => ({
     id: `demo-lsu-${i}`, classe_id: C, eleve_id: e.id, bilan: 'T1',
-    positions: { 'fr.oral': 3, 'fr.lecture': 2 + (i % 3), 'fr.ecriture': 3, 'fr.langue': 2 + (i % 2), 'ma.nombres': 3, 'ma.grandeurs': 2 + (i % 3), 'ma.espace': 3, eps: 4, hg: 3, st: 3 },
-    appreciations: { fr: 'Bon trimestre en français : la lecture progresse, l\'écriture demande encore de l\'attention.', ma: 'Les techniques de calcul sont en place.' },
-    appreciation_generale: 'Un trimestre sérieux et volontaire. Continue ainsi !', absences: i % 4, accompagnement: null,
+    positions: Object.fromEntries(BLOCS_LSU.flatMap((b) => b.domaines.flatMap((dm) => dm.elements.map((el, k) => {
+      const h = (i * 7 + k * 3 + dm.id.length) % 10
+      return [`${dm.id}|${el.libelle}`, h < 1 ? 1 : h < 3 ? 2 : h < 9 ? 3 : 4]
+    })))),
+    appreciations: {},
+    appreciation_generale: 'Un trimestre sérieux et volontaire. La lecture progresse bien ; l\'écriture demande encore de l\'attention. Continue ainsi !', absences: i % 4, accompagnement: null,
     publie: e.id === DEMO_IDS.enfant, publie_le: e.id === DEMO_IDS.enfant ? now : null, vu_le: null, updated_at: now,
   }))
 
@@ -199,11 +208,10 @@ export function demoDonnees(): Record<string, Record<string, any>[]> {
     parents: [{ eleve_id: DEMO_IDS.enfant, user_id: DEMO_IDS.parent, nom_affiche: 'Claire', lien: 'Maman', created_at: now }],
     edt_creneaux: edt,
     seances, devoirs, resumes, messages, agenda, progressions, sequences, sequence_etapes: etapes, evaluations, lsu_bilans,
-    lsu_classe: [{ classe_id: C, bilan: 'T1', elements: {
-      fr: ['Lire avec fluidité', 'Comprendre un texte littéraire et l\'interpréter', 'Observer le fonctionnement du verbe et l\'orthographier', 'Produire des écrits variés'].join('\n'),
-      ma: ['Utiliser et représenter les grands nombres entiers, des fractions simples, les nombres décimaux', 'Calculer avec des nombres entiers et des nombres décimaux', 'Chercher'].join('\n'),
-      hg: ['Se repérer dans le temps : construire des repères historiques', 'Histoire : le Moyen Âge', 'Géographie : se nourrir'].join('\n'),
-    }, projets: 'Chorale ; parcours Moyen Âge.' }],
+    lsu_classe: [{ classe_id: C, bilan: 'T1', elements: {}, projets: JSON.stringify({
+      citoyen: 'Élection des délégués de classe.\nParticipation à la journée nationale de lutte contre le harcèlement à l\'école.',
+      peac: 'Chorale de l\'école : concert de fin de trimestre.\nSortie au musée : le Moyen Âge.',
+    }) }],
     lectures: [],
   }
 }

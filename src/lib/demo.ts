@@ -247,6 +247,13 @@ export function creerClientDemo() {
         s.sauver()
         return { data: j.jeton, error: null }
       }
+      if (nom === 'livret_vu') {
+        const l = s.table('lsu_bilans').find((x) => x.id === args.p_livret && x.publie && s.mesEleves().includes(x.eleve_id))
+        if (!l) return { data: null, error: { message: 'Livret introuvable' } }
+        l.vu_le = l.vu_le ?? new Date().toISOString()
+        s.sauver()
+        return { data: l.vu_le, error: null }
+      }
       if (nom === 'journal_remplacant') return { data: journalRemplacantDemo(s, args.p_jeton, args.p_date), error: null }
       return { data: null, error: { message: `Fonction inconnue : ${nom}` } }
     },

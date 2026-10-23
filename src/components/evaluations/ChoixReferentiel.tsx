@@ -3,8 +3,8 @@ import { Check, Search, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { BoutonIcone, Saisie } from '../ui'
 import { matiere } from '../../lib/matieres'
-import { REFERENTIEL_LSU, type ElementProgramme, type SousDomaine } from '../../lib/referentielLsu'
-import { DOMAINE_COURT, ICONE_LSU, NOM_COURT_LSU } from '../lsu/outils'
+import { BLOCS_LSU, type DomaineLivret, type ElementProgramme } from '../../lib/referentielLsu'
+import { couleurLsu, DOMAINE_COURT, NOM_COURT_LSU } from '../lsu/outils'
 
 const normaliser = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 
@@ -12,7 +12,7 @@ const normaliser = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toL
 export function ChoixReferentiel({ matiereLsu, choisis, onBasculer, onFermer }: {
   matiereLsu: string | null | undefined
   choisis: Set<string>
-  onBasculer: (el: ElementProgramme, sd: SousDomaine) => void
+  onBasculer: (el: ElementProgramme, dm: DomaineLivret) => void
   onFermer: () => void
 }) {
   const [recherche, setRecherche] = useState('')
@@ -22,9 +22,9 @@ export function ChoixReferentiel({ matiereLsu, choisis, onBasculer, onFermer }: 
 
   const groupes = useMemo(() => {
     const q = normaliser(recherche.trim())
-    return REFERENTIEL_LSU
-      .filter((m) => !filtre || m.matiere === filtre)
-      .flatMap((m) => m.sousDomaines.map((sd) => ({
+    return BLOCS_LSU
+      .filter((m) => !filtre || m.id === filtre || m.domaines.some((dm) => dm.id === filtre))
+      .flatMap((m) => m.domaines.filter((dm) => !filtre || m.id === filtre || dm.id === filtre).map((sd) => ({
         m, sd, elements: q ? sd.elements.filter((el) => normaliser(el.libelle).includes(q)) : sd.elements,
       })))
       .filter((g) => g.elements.length)
@@ -40,7 +40,7 @@ export function ChoixReferentiel({ matiereLsu, choisis, onBasculer, onFermer }: 
         </span>
         {matiereLsu && (
           <span className="flex shrink-0 rounded-full bg-papier p-0.5 text-sm font-semibold">
-            {[{ v: false, l: NOM_COURT_LSU[matiereLsu] ?? matiereLsu }, { v: true, l: 'Tout' }].map((o) => (
+            {[{ v: false, l: NOM_COURT_LSU[matiereLsu] ?? DOMAINE_COURT[matiereLsu] ?? matiereLsu }, { v: true, l: 'Tout' }].map((o) => (
               <button key={o.l} type="button" onClick={() => setTout(o.v)} aria-pressed={tout === o.v}
                 className={clsx('rounded-full px-3 py-1.5 transition', tout === o.v ? 'bg-white text-bateau-fonce shadow-sm' : 'text-brume hover:text-encre')}>
                 {o.l}
@@ -53,14 +53,14 @@ export function ChoixReferentiel({ matiereLsu, choisis, onBasculer, onFermer }: 
 
       <div className="flex max-h-80 flex-col gap-3 overflow-y-auto pr-1">
         {groupes.map(({ m, sd, elements }) => {
-          const mat = matiere(ICONE_LSU[m.matiere])
+          const mat = matiere(couleurLsu(sd.id))
           const Icone = mat.icone
-          const nomSd = m.sousDomaines.length > 1 ? (DOMAINE_COURT[sd.id] ?? sd.nom) : null
+          const nomSd = m.domaines.length > 1 ? (DOMAINE_COURT[sd.id] ?? sd.nom) : null
           return (
             <div key={sd.id} className="flex flex-col gap-1">
               <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: mat.couleur }} title={sd.nom}>
                 <Icone className="size-3.5" strokeWidth={2.4} />
-                {filtre ? (nomSd ?? NOM_COURT_LSU[m.matiere]) : [NOM_COURT_LSU[m.matiere] ?? m.nom, nomSd].filter(Boolean).join(' · ')}
+                {filtre ? (nomSd ?? NOM_COURT_LSU[m.id]) : [NOM_COURT_LSU[m.id] ?? m.nom, nomSd].filter(Boolean).join(', ')}
               </span>
               {elements.map((el) => {
                 const pris = choisis.has(el.libelle)

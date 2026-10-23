@@ -14,6 +14,8 @@ export type Reglages = {
   lsu?: { rythme?: 'trimestre' | 'semestre' | 'periode'; bilans?: BilanLsu[] }
   /** Mot affiché au remplaçant (accès par QR code) */
   mot_remplacant?: string
+  /** Nom affiché dans le visa du livret */
+  directeur_nom?: string
 }
 
 export type Classe = {
@@ -153,7 +155,8 @@ export type Etape = {
   evaluation: string | null
 }
 
-export type ItemEval = { id: string; libelle: string; domaine?: string | null }
+/** domaine : domaine du livret ; element : clé d'un élément du programme (domaine|libellé) */
+export type ItemEval = { id: string; libelle: string; domaine?: string | null; element?: string | null }
 
 export type Evaluation = {
   id: string

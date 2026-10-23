@@ -2,6 +2,7 @@ import {
   BookOpen, Calculator, Coffee, Earth, FlaskConical, Footprints, Landmark, Languages, Monitor, Music,
   Palette, PenLine, Sailboat, Scale, Sparkles, Users, type LucideIcon,
 } from 'lucide-react'
+import { BLOCS_LSU } from './referentielLsu'
 
 export type Matiere = {
   id: string
@@ -46,44 +47,12 @@ export function matiere(id: string | null | undefined): Matiere {
 export type DomaineLsu = { id: string; nom: string }
 export type MatiereLsu = { id: string; nom: string; domaines: DomaineLsu[] }
 
-export const LSU: MatiereLsu[] = [
-  {
-    id: 'fr', nom: 'Français', domaines: [
-      { id: 'fr.oral', nom: 'Langage oral' },
-      { id: 'fr.lecture', nom: 'Lecture et compréhension de l\'écrit' },
-      { id: 'fr.ecriture', nom: 'Écriture' },
-      { id: 'fr.langue', nom: 'Étude de la langue (grammaire, orthographe, lexique)' },
-    ],
-  },
-  {
-    id: 'ma', nom: 'Mathématiques', domaines: [
-      { id: 'ma.nombres', nom: 'Nombres et calcul' },
-      { id: 'ma.grandeurs', nom: 'Grandeurs et mesures' },
-      { id: 'ma.espace', nom: 'Espace et géométrie' },
-    ],
-  },
-  {
-    id: 'lv', nom: 'Langues vivantes (anglais)', domaines: [
-      { id: 'lv.ecouter', nom: 'Écouter et comprendre' },
-      { id: 'lv.lire', nom: 'Lire et comprendre' },
-      { id: 'lv.parler', nom: 'Parler en continu' },
-      { id: 'lv.ecrire', nom: 'Écrire' },
-      { id: 'lv.dialoguer', nom: 'Réagir et dialoguer' },
-      { id: 'lv.culture', nom: 'Découvrir les aspects culturels de la langue' },
-    ],
-  },
-  { id: 'ap', nom: 'Arts plastiques', domaines: [{ id: 'ap', nom: 'Arts plastiques' }] },
-  { id: 'em', nom: 'Éducation musicale', domaines: [{ id: 'em', nom: 'Éducation musicale' }] },
-  { id: 'hda', nom: 'Histoire des arts', domaines: [{ id: 'hda', nom: 'Histoire des arts' }] },
-  { id: 'eps', nom: 'Éducation physique et sportive', domaines: [{ id: 'eps', nom: 'Éducation physique et sportive' }] },
-  { id: 'emc', nom: 'Enseignement moral et civique', domaines: [{ id: 'emc', nom: 'Enseignement moral et civique' }] },
-  { id: 'hg', nom: 'Histoire et géographie', domaines: [{ id: 'hg', nom: 'Histoire et géographie' }] },
-  { id: 'st', nom: 'Sciences et technologie', domaines: [{ id: 'st', nom: 'Sciences et technologie' }] },
-]
+/** Blocs du livret (Français, Mathématiques…) et leurs domaines, tirés du référentiel */
+export const LSU: MatiereLsu[] = BLOCS_LSU.map((b) => ({ id: b.id, nom: b.nom, domaines: b.domaines.map((d) => ({ id: d.id, nom: d.nom })) }))
 
 export const NIVEAUX = [
   { v: 1, nom: 'Objectifs non atteints', court: 'Non atteints', couleur: '#E5484D', fond: '#FDEFEF' },
-  { v: 2, nom: 'Objectifs partiellement atteints', court: 'Partiellement', couleur: '#F2A516', fond: '#FEF7EA' },
+  { v: 2, nom: 'Objectifs partiellement atteints', court: 'Partiellement atteints', couleur: '#F2A516', fond: '#FEF7EA' },
   { v: 3, nom: 'Objectifs atteints', court: 'Atteints', couleur: '#18A058', fond: '#EAF6F0' },
   { v: 4, nom: 'Objectifs dépassés', court: 'Dépassés', couleur: '#3358E0', fond: '#ECF0FF' },
 ] as const

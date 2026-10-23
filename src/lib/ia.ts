@@ -290,7 +290,11 @@ export function promptAppreciations(p: {
     const b = p.bilans.find((x) => x.eleve_id === e.id)
     const pos = b ? Object.entries(b.positions ?? {}) : []
     if (pos.length) {
-      lignes.push('  Positionnements : ' + pos.map(([d, v]) => `${d} = ${NIVEAUX.find((n) => n.v === v)?.court ?? v}`).join(' ; '))
+      // Regroupe par niveau pour rester court : « Atteints : … »
+      for (const n of NIVEAUX) {
+        const l = pos.filter(([, v]) => v === n.v).map(([cle]) => cle.slice(cle.indexOf('|') + 1))
+        if (l.length) lignes.push(`  ${n.court} : ${l.join(' ; ')}`)
+      }
     }
     for (const ev of p.evaluations) {
       const r = ev.resultats?.[e.id]
@@ -300,7 +304,7 @@ export function promptAppreciations(p: {
     }
     blocs.push(`${code}\n${lignes.join('\n') || '  (pas de résultat saisi)'}`)
   }
-  return `Tu es mon assistant pour le livret scolaire (LSU). Rédige les appréciations du ${p.bilanNom} pour chaque élève de ma classe de ${p.classe.nom}.
+  return `Tu es mon assistant pour le livret scolaire (LSU). Rédige l'appréciation générale sur la progression de l'élève, pour le ${p.bilanNom}, pour chaque élève de ma classe de ${p.classe.nom}.
 
 Les élèves sont désignés par un code (E1, E2…). N'invente pas de prénom : écris sans prénom ni pronom genré (par exemple « Bon trimestre : la lecture progresse »).
 
@@ -309,21 +313,19 @@ Niveaux : Non atteints < Partiellement < Atteints < Dépassés.
 ${blocs.join('\n\n')}
 
 ## Mes règles
-- Bienveillant, précis, concret : un point fort, un point à travailler, un conseil.
-- 1 à 2 phrases par matière, 2 à 3 phrases pour l'appréciation générale.
+- Bienveillant, précis, concret : les points forts, ce qui reste à travailler (attitude comprise), un conseil.
+- 3 à 5 phrases, en s'appuyant sur les positionnements et les résultats.
 - Vocabulaire compréhensible par les familles et par l'élève.
-- N'écris une appréciation de matière que s'il y a des résultats dans cette matière (sinon omets la matière).
 ${p.precisions.trim() ? `\n## Précisions pour cette fois\n${p.precisions.trim()}\n` : ''}
 ## Format de ta réponse
 Réponds UNIQUEMENT avec un bloc JSON, sans texte autour :
 \`\`\`json
 {
   "eleves": [
-    { "code": "E1", "appreciations": { "fr": "…", "ma": "…" }, "appreciation_generale": "…" }
+    { "code": "E1", "appreciation_generale": "…" }
   ]
 }
-\`\`\`
-Clés possibles pour "appreciations" : ${LSU.map((m) => `"${m.id}" (${m.nom})`).join(', ')}.`
+\`\`\``
 }
 
 export function lireAppreciations(json: any, codes: Map<string, Eleve>): AppreciationIA[] {

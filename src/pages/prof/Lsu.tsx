@@ -4,8 +4,8 @@ import { useMemo, useState } from 'react'
 import { AssistantIA, type DemandeIA } from '../../components/AssistantIA'
 import { FicheEleve } from '../../components/lsu/FicheEleve'
 import { imprimerLivrets } from '../../components/lsu/impression'
-import { bilanDuJour, bilansDe, lignesElements, NB_DOMAINES, propositions } from '../../components/lsu/outils'
-import { Programme } from '../../components/lsu/Programme'
+import { bilanDuJour, bilansDe, propositions, tousLesElements } from '../../components/lsu/outils'
+import { Programme, PARCOURS_ID } from '../../components/lsu/Programme'
 import { VueClasse } from '../../components/lsu/VueClasse'
 import { Bouton, BoutonIcone, Chargement, Entete, Liste, Onglets, OngletsLigne, Vide, useConfirmation, useToast } from '../../components/ui'
 import { aujourdhui } from '../../lib/dates'
@@ -16,7 +16,7 @@ import type { Eleve, LsuBilan } from '../../lib/types'
 
 type Vue = 'eleve' | 'classe' | 'programme'
 
-const nbPositions = (l: LsuBilan | undefined) => Object.keys(l?.positions ?? {}).length
+const nbPositions = (l: LsuBilan | undefined, cles: Set<string>) => Object.keys(l?.positions ?? {}).filter((k) => cles.has(k)).length
 
 export default function Lsu() {
   const classe = useClasse()
@@ -26,6 +26,7 @@ export default function Lsu() {
   const [vue, setVue] = useState<Vue>('eleve')
   const [index, setIndex] = useState(0)
   const [demandeIA, setDemandeIA] = useState<DemandeIA | null>(null)
+  const [programmeSur, setProgrammeSur] = useState<string | undefined>(undefined)
 
   const eleves = useEleves()
   const evals = useEvaluations()
@@ -37,15 +38,17 @@ export default function Lsu() {
 
   const actifs = useMemo(() => (eleves.data ?? []).filter((e) => e.actif), [eleves.data])
   const parEleve = useMemo(() => new Map((lsu.data ?? []).map((l) => [l.eleve_id, l])), [lsu.data])
-  const props = useMemo(() => propositions(evals.data ?? [], bilan), [evals.data, bilan])
   const elements = lsuClasse.data?.[0]
+  const travailles = useMemo(() => tousLesElements(elements), [elements])
+  const cles = useMemo(() => new Set(travailles.map((x) => x.cle)), [travailles])
+  const props = useMemo(() => propositions(evals.data ?? [], bilan, travailles), [evals.data, bilan, travailles])
 
   if (!bilan) return <Vide icone={GraduationCap} texte="Aucun bilan dans les réglages" />
-  if (eleves.isLoading || lsu.isLoading) return <Chargement />
+  if (eleves.isLoading || lsu.isLoading || lsuClasse.isLoading) return <Chargement />
 
   const i = Math.min(index, Math.max(actifs.length - 1, 0))
   const eleve = actifs[i]
-  const nbElements = Object.values(elements?.elements ?? {}).reduce((n, t) => n + lignesElements(t).length, 0)
+  const total = travailles.length
 
   const publier = async (eleveId: string, publie: boolean) => {
     try {
@@ -74,7 +77,7 @@ export default function Lsu() {
     })
   }
   const imprimer = (lesquels: Eleve[]) => {
-    if (!imprimerLivrets({ classe, bilan, eleves: lesquels, lignes: lsu.data ?? [], elements })) toast('Autorise les fenêtres pour imprimer', 'erreur')
+    if (!imprimerLivrets({ classe, bilan, nbBilans: bilans.length, eleves: lesquels, lignes: lsu.data ?? [], elements })) toast('Autorise les fenêtres pour imprimer', 'erreur')
   }
   const aller = (n: number) => setIndex((n + actifs.length) % actifs.length)
 
@@ -92,10 +95,10 @@ export default function Lsu() {
         </>}
       />
 
-      <OngletsLigne<Vue> valeur={vue} onChange={setVue} options={[
+      <OngletsLigne<Vue> valeur={vue} onChange={(v) => { setProgrammeSur(undefined); setVue(v) }} options={[
         { id: 'eleve', label: 'Par élève' },
         { id: 'classe', label: 'Toute la classe' },
-        { id: 'programme', label: 'Programme travaillé', nombre: nbElements },
+        { id: 'programme', label: 'Programme travaillé', nombre: total },
       ]} />
 
       {actifs.length === 0 ? (
@@ -105,7 +108,7 @@ export default function Lsu() {
           <nav className={clsx('hidden max-h-[calc(100dvh-4rem)] flex-col gap-0.5 overflow-y-auto pb-4 lg:sticky lg:flex', MODE_DEMO ? 'top-12' : 'top-4')} aria-label="Élèves">
             {actifs.map((e, j) => {
               const l = parEleve.get(e.id)
-              const n = nbPositions(l)
+              const n = nbPositions(l, cles)
               return (
                 <button key={e.id} type="button" onClick={() => setIndex(j)} aria-current={j === i}
                   className={clsx('flex items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm transition',
@@ -114,8 +117,8 @@ export default function Lsu() {
                   {l?.publie
                     ? <CheckCircle2 className="size-4 shrink-0 text-succes" aria-label="Publié" />
                     : (
-                      <span className="h-1 w-8 shrink-0 overflow-hidden rounded-full bg-trait" title={`${n} sur ${NB_DOMAINES} positionnés`}>
-                        <span className="block h-full rounded-full bg-bateau" style={{ width: `${(n / NB_DOMAINES) * 100}%` }} />
+                      <span className="h-1 w-8 shrink-0 overflow-hidden rounded-full bg-trait" title={`${n} sur ${total} positionnés`}>
+                        <span className="block h-full rounded-full bg-bateau" style={{ width: `${total ? (n / total) * 100 : 0}%` }} />
                       </span>
                     )}
                 </button>
@@ -125,20 +128,23 @@ export default function Lsu() {
 
           <FicheEleve
             key={`${eleve.id}-${bilan.id}`}
-            classeId={classe.id}
+            classe={classe}
+            bilan={bilan}
+            nbBilans={bilans.length}
             eleve={eleve}
-            bilan={bilan.id}
             ligne={parEleve.get(eleve.id)}
+            classeLsu={elements}
             proposees={props[eleve.id] ?? {}}
-            entete={<EnteteEleve eleve={eleve} eleves={actifs} index={i} ligne={parEleve.get(eleve.id)} aller={aller}
+            onModifierParcours={() => { setProgrammeSur(PARCOURS_ID); setVue('programme') }}
+            entete={<EnteteEleve eleve={eleve} eleves={actifs} index={i} ligne={parEleve.get(eleve.id)} aller={aller} total={total} cles={cles}
               onPublier={(v) => publier(eleve.id, v)} onImprimer={() => imprimer([eleve])} />}
           />
         </div>
       ) : vue === 'classe' ? (
-        <VueClasse classeId={classe.id} bilan={bilan.id} eleves={actifs} parEleve={parEleve} props={props}
+        <VueClasse classeId={classe.id} bilan={bilan.id} eleves={actifs} parEleve={parEleve} props={props} classeLsu={elements}
           onOuvrir={(j) => { setIndex(j); setVue('eleve') }} />
       ) : vue === 'programme' ? (
-        lsuClasse.isLoading ? <Chargement /> : <Programme key={bilan.id} classeId={classe.id} bilan={bilan.id} actuel={elements} />
+        <Programme key={`${bilan.id}-${programmeSur ?? ''}`} classeId={classe.id} bilan={bilan.id} actuel={elements} ouvrirSur={programmeSur} />
       ) : null}
 
       <AssistantIA demande={demandeIA} onFermer={() => setDemandeIA(null)} />
@@ -148,11 +154,11 @@ export default function Lsu() {
 }
 
 /** Nom de l'élève, changement d'élève, état de publication */
-function EnteteEleve({ eleve, eleves, index, ligne, aller, onPublier, onImprimer }: {
+function EnteteEleve({ eleve, eleves, index, ligne, aller, onPublier, onImprimer, total, cles }: {
   eleve: Eleve; eleves: Eleve[]; index: number; ligne: LsuBilan | undefined
-  aller: (i: number) => void; onPublier: (v: boolean) => void; onImprimer: () => void
+  aller: (i: number) => void; onPublier: (v: boolean) => void; onImprimer: () => void; total: number; cles: Set<string>
 }) {
-  const n = nbPositions(ligne)
+  const n = nbPositions(ligne, cles)
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
       <div className="flex items-center gap-1">
@@ -165,7 +171,7 @@ function EnteteEleve({ eleve, eleves, index, ligne, aller, onPublier, onImprimer
           {eleves.map((e) => <option key={e.id} value={e.id}>{e.prenom}</option>)}
         </Liste>
         <h2 className="hidden truncate text-xl font-bold text-encre lg:block">{eleve.prenom} {eleve.nom ?? ''}</h2>
-        <p className="text-xs text-brume">{n} sur {NB_DOMAINES} positionnés</p>
+        <p className="text-xs text-brume">{n} sur {total} éléments positionnés</p>
       </div>
       <div className="flex items-center gap-1.5">
         {ligne?.publie ? (

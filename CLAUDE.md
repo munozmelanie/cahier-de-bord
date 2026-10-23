@@ -30,6 +30,10 @@ Classe : `select id from classes` (une seule). Tables utiles :
   publie false : la publication se fait en fin de journée).
 - `edt_creneaux` (periode P1…P5, jour 1=lundi…5, debut, fin, matiere, libelle, type cours|pause).
 - `progressions`, `sequences`, `sequence_etapes`, `agenda`, `evaluations`, `lsu_bilans`, `lsu_classe`.
+- Livret (présentation du bilan périodique du LSU) : référentiel CM1 dans `src/lib/referentielLsu.ts` (blocs → domaines →
+  éléments). `lsu_classe.elements` = { domaine : un élément travaillé par ligne } (domaine absent = tous les éléments
+  officiels) ; `lsu_classe.projets` = parcours éducatifs en JSON { citoyen, peac, sante } ; `lsu_bilans.positions` =
+  { "domaine|libellé de l'élément" : 1 à 4 } ; `appreciation_generale` ; `vu_le` posé par la famille (`livret_vu`, migration 0006).
 - Matières (ids) : francais, lecture, maths, sciences, histoire, geographie, emc, anglais, arts, musique, eps,
   rituels, informatique, vie.
 

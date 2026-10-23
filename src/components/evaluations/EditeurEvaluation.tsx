@@ -4,10 +4,10 @@ import { Bouton, BoutonIcone, Champ, ChoixMatiere, Feuille, Liste, Saisie, useTo
 import { aujourdhui, periodeDe } from '../../lib/dates'
 import { useEcrire } from '../../lib/donnees'
 import { LSU, matiere as infoMatiere } from '../../lib/matieres'
-import type { ElementProgramme, SousDomaine } from '../../lib/referentielLsu'
+import type { DomaineLivret, ElementProgramme } from '../../lib/referentielLsu'
 import { useClasse } from '../../lib/session'
 import type { Evaluation, ItemEval } from '../../lib/types'
-import { DOMAINE_PAR_MATIERE } from '../lsu/outils'
+import { cleElement, DOMAINE_PAR_MATIERE } from '../lsu/outils'
 import { ChoixReferentiel } from './ChoixReferentiel'
 
 const nouvelId = () => Math.random().toString(36).slice(2, 9)
@@ -65,10 +65,10 @@ export function EditeurEvaluation({ ouverte, evaluation, onFermer, onCree }: {
   }
   const majItem = (i: number, patch: Partial<ItemEval>) => setItems((l) => l.map((it, j) => (j === i ? { ...it, ...patch } : it)))
   /** Référentiel : ajoute la compétence (dans la ligne vide s'il y en a une) ou la retire si elle est déjà là */
-  const basculerReferentiel = (el: ElementProgramme, sd: SousDomaine) => setItems((l) => {
+  const basculerReferentiel = (el: ElementProgramme, dm: DomaineLivret) => setItems((l) => {
     const i = l.findIndex((it) => it.libelle.trim() === el.libelle)
     if (i >= 0) return l.length > 1 ? l.filter((_, j) => j !== i) : [{ ...l[0], libelle: '', domaine: null }]
-    const item = { id: nouvelId(), libelle: el.libelle, domaine: sd.positionne ? sd.id : null }
+    const item = { id: nouvelId(), libelle: el.libelle, domaine: dm.id, element: cleElement(dm.id, el.libelle) }
     const vide = l.findIndex((it) => !it.libelle.trim())
     return vide >= 0 ? l.map((it, j) => (j === vide ? { ...item, id: it.id } : it)) : [...l, item]
   })
@@ -131,7 +131,7 @@ export function EditeurEvaluation({ ouverte, evaluation, onFermer, onCree }: {
                 <Saisie value={it.libelle} onChange={(e) => majItem(i, { libelle: e.target.value })} placeholder="Reconnaître un déterminant" aria-label={`Compétence ${i + 1}`} className="py-2" />
               </span>
               <div className="order-3 col-span-2 sm:order-none sm:col-span-1">
-                <ChoixDomaine valeur={it.domaine} onChange={(v) => majItem(i, { domaine: v })} />
+                <ChoixDomaine valeur={it.domaine} onChange={(v) => majItem(i, { domaine: v, element: null })} />
               </div>
               <BoutonIcone icone={Trash2} label="Retirer" onClick={() => setItems((l) => l.filter((_, j) => j !== i))} disabled={items.length === 1} />
             </div>

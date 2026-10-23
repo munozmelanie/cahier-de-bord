@@ -97,6 +97,7 @@ export default function Reglages() {
             <Champ label="École">{(id) => <Saisie id={id} value={c.ecole ?? ''} onChange={(e) => setC({ ...c, ecole: e.target.value })} />}</Champ>
             <Champ label="Ville">{(id) => <Saisie id={id} value={c.ville ?? ''} onChange={(e) => setC({ ...c, ville: e.target.value })} />}</Champ>
             <Champ label="Année">{(id) => <Saisie id={id} value={c.annee ?? ''} onChange={(e) => setC({ ...c, annee: e.target.value })} placeholder="2026-2027" />}</Champ>
+            <Champ label="Directrice ou directeur" aide="Pour le visa du livret">{(id) => <Saisie id={id} value={r.directeur_nom ?? ''} onChange={(e) => maj({ directeur_nom: e.target.value })} placeholder="Mme …" />}</Champ>
           </div>
         </Bloc>
 
