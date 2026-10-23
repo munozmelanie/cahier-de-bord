@@ -1,5 +1,6 @@
 import { Copy, ExternalLink, Printer, QrCode, RefreshCw, Save, ShieldOff } from 'lucide-react'
 import QRCode from 'qrcode'
+import { lienAppli } from '../../lib/qr'
 import { useEffect, useState } from 'react'
 import { useEcrire } from '../../lib/donnees'
 import { useClasse, useSession } from '../../lib/session'
@@ -7,8 +8,8 @@ import { db, verif } from '../../lib/supabase'
 import type { Classe } from '../../lib/types'
 import { Bouton, Feuille, Texte, useConfirmation, useToast } from '../ui'
 
-/** Adresse de la page remplaçant (même site que l'appli) */
-export const lienRemplacant = (jeton: string) => `${window.location.origin}${window.location.pathname}#/r/${jeton}`
+/** Adresse de la page remplaçant (toujours le vrai site, lisible depuis n'importe quel téléphone) */
+export const lienRemplacant = (jeton: string) => lienAppli(`/r/${jeton}`)
 
 const svgQr = (texte: string) =>
   QRCode.toString(texte, { type: 'svg', margin: 0, errorCorrectionLevel: 'M', color: { dark: '#1C2333', light: '#FFFFFF' } })
