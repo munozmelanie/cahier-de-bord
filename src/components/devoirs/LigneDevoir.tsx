@@ -12,7 +12,7 @@ export function LigneDevoir({ d, mode = 'pour', onClick, statut = true }: { d: D
       className={clsx('flex w-full items-start gap-3 rounded-2xl px-2 py-2 text-left', onClick && 'hover:bg-white')}>
       <PastilleMatiere id={d.matiere} taille="s" />
       <span className="min-w-0 flex-1">
-        <span className={clsx('block font-bold leading-snug', d.type === 'evaluation' && 'text-alerte')}>{d.texte}</span>
+        <span className={clsx('block font-semibold leading-snug', d.type === 'evaluation' && 'text-alerte')}>{d.texte}</span>
         <span className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-brume">
           {d.type !== 'travail' && <BadgeType type={d.type} />}
           {mode === 'pour' && <span>pour {fmtJourCourt(d.pour_le)}</span>}

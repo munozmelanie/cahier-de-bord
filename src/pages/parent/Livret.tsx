@@ -1,29 +1,17 @@
-import { CalendarX2, Flag, GraduationCap, HandHelping, ListChecks, Quote } from 'lucide-react'
+import { ChevronDown, GraduationCap } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { ABREV, bilansDe, DOMAINE_COURT, ICONE_LSU, lignesElements, NOM_COURT_LSU } from '../../components/lsu/outils'
+import { EtiquetteNiveau } from '../../components/lsu/Niveaux'
+import { bilansDe, ICONE_LSU, lignesElements } from '../../components/lsu/outils'
 import { Chargement, Onglets, Vide } from '../../components/ui'
 import { useLsuClasse, useTable } from '../../lib/donnees'
-import { LSU, NIVEAUX, matiere, niveau } from '../../lib/matieres'
+import { LSU, matiere } from '../../lib/matieres'
 import { useSession } from '../../lib/session'
 import type { LsuBilan } from '../../lib/types'
-
-/** Pastille ronde d'un niveau (NA, PA, A, D), nom complet en infobulle */
-function Pastille({ v }: { v: number }) {
-  const n = niveau(v)
-  if (!n) return null
-  return (
-    <span className="flex size-9 shrink-0 items-center justify-center rounded-full font-titre text-sm font-semibold text-white shadow-sm"
-      style={{ background: n.couleur }} title={n.nom} aria-label={n.nom}>
-      {ABREV[n.v]}
-    </span>
-  )
-}
 
 export default function Livret() {
   const { enfant, classe } = useSession()
   const tousBilans = useMemo(() => bilansDe(classe?.reglages), [classe?.reglages])
   const livrets = useTable<LsuBilan>('lsu_bilans', ['famille', enfant?.id], (q) => q.eq('eleve_id', enfant!.id), !!enfant)
-  const [ouverts, setOuverts] = useState<Record<string, boolean>>({})
 
   // Bilans publiés, du plus récent au plus ancien
   const publies = useMemo(() => {
@@ -36,106 +24,87 @@ export default function Livret() {
   const elements = useLsuClasse(livret?.bilan ?? '')
 
   if (livrets.isLoading) return <Chargement />
-  if (!livret) return <Vide icone={GraduationCap} texte="Pas encore de livret" />
+  if (!livret) return <Vide icone={GraduationCap} texte="Le livret apparaîtra ici quand il sera publié" />
 
   const el = elements.data?.[0]
+  const accompagnement = livret.accompagnement?.trim()
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        {publies.length > 1 ? (
-          <Onglets valeur={livret.bilan} onChange={setChoix}
-            options={publies.map((l) => ({ id: l.bilan, label: tousBilans.find((b) => b.id === l.bilan)?.nom ?? l.bilan }))} />
-        ) : (
-          <span className="inline-flex items-center gap-2 rounded-full bg-encre px-3 py-1.5 text-sm font-bold text-white">
-            <GraduationCap className="size-4" /> {bilan?.nom ?? livret.bilan}
-          </span>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-encre">Livret</h1>
+          <p className="mt-0.5 text-sm text-brume">{bilan?.nom ?? livret.bilan}</p>
+        </div>
+        {publies.length > 1 && (
+          <Onglets valeur={livret.bilan} onChange={setChoix} options={publies.map((l) => ({ id: l.bilan, label: l.bilan }))} />
         )}
-        {livret.absences != null && (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 font-titre text-lg font-semibold text-alerte shadow-doux"
-            title="Demi-journées d'absence">
-            <CalendarX2 className="size-5" /> {livret.absences}
-          </span>
-        )}
-      </div>
-
-      {/* Légende : une pastille par niveau */}
-      <div className="grid grid-cols-4 gap-1.5">
-        {NIVEAUX.map((n) => (
-          <span key={n.v} className="flex flex-col items-center gap-1 rounded-2xl py-2 text-center text-[11px] font-bold leading-tight" style={{ background: n.fond, color: n.couleur }}>
-            <Pastille v={n.v} />
-            {n.court}
-          </span>
-        ))}
       </div>
 
       {livret.appreciation_generale?.trim() && (
-        <section className="flex gap-3 rounded-3xl bg-bateau p-4 text-white shadow-doux" aria-label="Appréciation générale">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-white/20"><Quote className="size-5" /></span>
-          <p className="whitespace-pre-line text-lg leading-relaxed">{livret.appreciation_generale}</p>
+        <section className="rounded-3xl bg-white p-5 shadow-doux" aria-label="Appréciation générale">
+          <h2 className="mb-2 text-sm font-semibold text-brume">Appréciation générale</h2>
+          <p className="whitespace-pre-line text-[17px] leading-relaxed text-encre">{livret.appreciation_generale}</p>
+          {(livret.absences != null || accompagnement) && (
+            <dl className="mt-4 flex flex-wrap gap-x-8 gap-y-2 border-t border-trait pt-3 text-sm">
+              {livret.absences != null && <div><dt className="text-brume">Absences</dt><dd className="font-semibold text-encre">{livret.absences} demi-journée{livret.absences > 1 ? 's' : ''}</dd></div>}
+              {accompagnement && <div><dt className="text-brume">Accompagnement</dt><dd className="font-semibold text-encre">{accompagnement}</dd></div>}
+            </dl>
+          )}
         </section>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        {LSU.map((m) => {
-          const app = livret.appreciations?.[m.id]?.trim()
-          const doms = m.domaines.filter((d) => livret.positions?.[d.id])
-          if (!app && !doms.length) return null
-          const mat = matiere(ICONE_LSU[m.id])
-          const Icone = mat.icone
-          const unSeul = m.domaines.length === 1
-          const travaille = lignesElements(el?.elements?.[m.id])
-          return (
-            <section key={m.id} className="flex flex-col gap-3 rounded-[26px] p-4" style={{ background: mat.fond }} aria-label={m.nom}>
-              <div className="flex items-center gap-3">
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm" style={{ color: mat.couleur }}>
-                  <Icone className="size-6" strokeWidth={2.2} />
-                </span>
-                <span className="min-w-0 flex-1 truncate font-titre text-lg font-semibold text-encre" title={m.nom}>{NOM_COURT_LSU[m.id] ?? m.nom}</span>
-                {unSeul && doms[0] && <Pastille v={livret.positions[doms[0].id]} />}
-                {travaille.length > 0 && (
-                  <button type="button" onClick={() => setOuverts((o) => ({ ...o, [m.id]: !o[m.id] }))} aria-expanded={!!ouverts[m.id]}
-                    aria-label="Ce qui a été travaillé" title="Ce qui a été travaillé"
-                    className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white/70 transition hover:bg-white" style={{ color: mat.couleur }}>
-                    <ListChecks className="size-5" />
-                  </button>
-                )}
-              </div>
-              {!unSeul && doms.length > 0 && (
-                <ul className="flex flex-col gap-2">
-                  {doms.map((d) => (
-                    <li key={d.id} className="flex items-center justify-between gap-3">
-                      <span className="min-w-0 text-sm font-bold" style={{ color: mat.couleur }} title={d.nom}>{DOMAINE_COURT[d.id] ?? d.nom}</span>
-                      <Pastille v={livret.positions[d.id]} />
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {app && <p className="whitespace-pre-line rounded-2xl bg-white/90 px-3 py-2.5 leading-relaxed text-encre">{app}</p>}
-              {travaille.length > 0 && ouverts[m.id] && (
-                <ul className="flex flex-col gap-1 text-sm font-bold leading-snug" style={{ color: mat.couleur }}>
+      {LSU.map((m) => {
+        const app = livret.appreciations?.[m.id]?.trim()
+        const doms = m.domaines.filter((d) => livret.positions?.[d.id])
+        if (!app && !doms.length) return null
+        const couleur = matiere(ICONE_LSU[m.id]).couleur
+        const unSeul = m.domaines.length === 1
+        const travaille = lignesElements(el?.elements?.[m.id])
+        return (
+          <section key={m.id} className="rounded-3xl bg-white shadow-doux" aria-label={m.nom}>
+            <div className="flex items-center gap-3 px-4 pb-2 pt-4">
+              <h2 className="flex min-w-0 flex-1 items-center gap-2.5 font-semibold text-encre">
+                <span className="size-2.5 shrink-0 rounded-full" style={{ background: couleur }} />{m.nom}
+              </h2>
+              {unSeul && doms[0] && <EtiquetteNiveau v={livret.positions[doms[0].id]} />}
+            </div>
+            {!unSeul && doms.length > 0 && (
+              <ul className="px-4">
+                {doms.map((d) => (
+                  <li key={d.id} className="flex items-center justify-between gap-3 border-t border-trait/70 py-2 first:border-t-0">
+                    <span className="min-w-0 pl-5 text-sm text-encre/85">{d.nom}</span>
+                    <EtiquetteNiveau v={livret.positions[d.id]} />
+                  </li>
+                ))}
+              </ul>
+            )}
+            {app && <p className="whitespace-pre-line px-4 pb-1 pl-9 pt-1 leading-relaxed text-encre">{app}</p>}
+            {travaille.length > 0 ? (
+              <details className="group px-4 pb-3 pt-1">
+                <summary className="ml-5 inline-flex cursor-pointer list-none items-center gap-1 text-sm font-semibold text-bateau [&::-webkit-details-marker]:hidden">
+                  Ce qui a été travaillé <ChevronDown className="size-4 transition group-open:rotate-180" />
+                </summary>
+                <ul className="ml-5 mt-2 flex flex-col gap-1.5 text-sm leading-snug text-encre/80">
                   {travaille.map((t, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <span className="mt-1.5 size-1.5 shrink-0 rounded-full" style={{ background: mat.couleur }} />
-                      <span>{t}</span>
-                    </li>
+                    <li key={i} className="flex items-start gap-2"><span className="mt-[7px] size-1 shrink-0 rounded-full bg-brume" />{t}</li>
                   ))}
                 </ul>
-              )}
-            </section>
-          )
-        })}
-      </div>
+              </details>
+            ) : <div className="pb-3" />}
+          </section>
+        )
+      })}
 
-      {livret.accompagnement?.trim() && (
-        <section className="flex gap-3 rounded-3xl bg-white p-4 shadow-doux" aria-label="Accompagnement">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-ambre-clair text-ambre-fonce"><HandHelping className="size-5" /></span>
-          <p className="whitespace-pre-line text-encre">{livret.accompagnement}</p>
+      {!livret.appreciation_generale?.trim() && (livret.absences != null || accompagnement) && (
+        <section className="rounded-3xl bg-white p-4 text-sm shadow-doux">
+          {livret.absences != null && <p><span className="text-brume">Absences : </span><b>{livret.absences}</b> demi-journée{livret.absences > 1 ? 's' : ''}</p>}
+          {accompagnement && <p><span className="text-brume">Accompagnement : </span><b>{accompagnement}</b></p>}
         </section>
       )}
       {el?.projets?.trim() && (
-        <section className="flex gap-3 rounded-3xl bg-white p-4 shadow-doux" aria-label="Projets de la classe">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-succes-clair text-succes"><Flag className="size-5" /></span>
+        <section className="rounded-3xl bg-white p-4 shadow-doux" aria-label="Projets de la classe">
+          <h2 className="mb-1.5 text-sm font-semibold text-brume">Projets et parcours de la classe</h2>
           <p className="whitespace-pre-line text-encre">{el.projets}</p>
         </section>
       )}

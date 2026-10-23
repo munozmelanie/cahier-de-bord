@@ -31,7 +31,7 @@ export function Signatures({ racine, eleves, lectures, parents }: {
         {etat.map(({ e, signe, lu }) => (
           <li key={e.id}
             title={signe ? `${nomParent(signe)} · ${fmtDateHeure(signe.signe_le!)}` : lu ? 'Lu, pas encore signé' : 'Pas encore lu'}
-            className={clsx('flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-bold',
+            className={clsx('flex items-center gap-1 rounded-full px-2.5 py-1 text-sm font-semibold',
               signe ? 'bg-succes text-white' : lu ? 'bg-bateau-clair text-bateau-fonce' : 'bg-papier text-brume')}>
             {signe ? <Check className="size-3.5" strokeWidth={3} /> : lu ? <Eye className="size-3.5" /> : null}
             {e.prenom}

@@ -2,6 +2,7 @@ import { CheckCircle2, Clock, Pencil, Send } from 'lucide-react'
 import { useState } from 'react'
 import { useEcrire, useRafraichir, useResumes } from '../../lib/donnees'
 import { fmtHeure } from '../../lib/dates'
+import { matiere } from '../../lib/matieres'
 import { db, verif } from '../../lib/supabase'
 import { useClasse } from '../../lib/session'
 import type { Devoir, Resume, Seance } from '../../lib/types'
@@ -61,17 +62,23 @@ export function ResumeCarte({ date, seances, devoirs }: { date: string; seances:
 
   const ouvrirEdition = () => setEdition({ classe_id: classe.id, date, items: items.map((x) => ({ ...x })), mot: r?.mot ?? '', modifie_main: true, publie: !!r?.publie, publie_le: r?.publie_le ?? null })
   return (
-    <CarteInfo icone={Send} couleur="#7B4DFF" fond="#EEE8FF" titre="Résumé pour les familles"
+    <CarteInfo icone={Send} couleur="#7B4DFF" fond="#F3EFFF" titre="Résumé du jour"
       nombre={r?.publie
-        ? <span className="inline-flex items-center gap-1 text-base text-succes"><CheckCircle2 className="size-5" /></span>
-        : auto ? <span className="inline-flex items-center gap-1 text-base text-ambre-fonce"><Clock className="size-5" />{fmtHeure(heure)}</span> : undefined}
+        ? <span className="inline-flex items-center gap-1 text-succes"><CheckCircle2 className="size-3.5" />Publié</span>
+        : auto ? <span className="inline-flex items-center gap-1"><Clock className="size-3.5" />{fmtHeure(heure)}</span> : undefined}
       action={<span className="flex gap-1">
-        <BoutonIcone icone={Pencil} label="Voir et modifier le résumé" className="size-9" onClick={ouvrirEdition} />
-        <BoutonIcone icone={Send} label={r?.publie ? 'Mettre à jour' : 'Publier maintenant'} variante={r?.publie ? 'doux' : 'primaire'} className="size-9" onClick={publier} disabled={enCours} />
+        <BoutonIcone icone={Pencil} label="Voir et modifier le résumé" className="size-8" onClick={ouvrirEdition} />
+        <BoutonIcone icone={Send} label={r?.publie ? 'Mettre à jour' : 'Publier maintenant'} variante={r?.publie ? 'doux' : 'primaire'} className="size-8" onClick={publier} disabled={enCours} />
       </span>}>
-      <button type="button" onClick={ouvrirEdition} className="flex flex-wrap gap-1.5" title="Voir le résumé">
-        {items.length ? items.map((it, i) => <PastilleMatiere key={i} id={it.matiere} taille="s" />) : <span className="text-sm text-brume">—</span>}
-        {devoirsEnAttente > 0 && <span className="ml-1 self-center rounded-full bg-ambre-clair px-2 text-xs font-bold leading-6 text-ambre-fonce">+{devoirsEnAttente} devoir{devoirsEnAttente > 1 ? 's' : ''}</span>}
+      <button type="button" onClick={ouvrirEdition} className="flex w-full flex-col gap-1.5 text-left" title="Voir le résumé">
+        {items.length ? items.slice(0, 4).map((it, i) => (
+          <span key={i} className="flex items-start gap-2 text-sm leading-snug text-encre/85">
+            <span className="mt-1.5 size-2 shrink-0 rounded-full" style={{ background: matiere(it.matiere).couleur }} />
+            <span className="line-clamp-1">{it.texte}</span>
+          </span>
+        )) : <span className="text-sm text-brume">Rien pour l'instant</span>}
+        {items.length > 4 && <span className="pl-4 text-xs text-brume">et {items.length - 4} autre{items.length - 4 > 1 ? 's' : ''}</span>}
+        {devoirsEnAttente > 0 && <span className="pl-4 text-xs text-brume">+ {devoirsEnAttente} devoir{devoirsEnAttente > 1 ? 's' : ''} publié{devoirsEnAttente > 1 ? 's' : ''} avec</span>}
       </button>
       <Feuille ouverte={!!edition} onFermer={() => setEdition(null)} titre="Résumé du jour"
         pied={<><Bouton variante="secondaire" onClick={() => setEdition(null)}>Annuler</Bouton><Bouton onClick={enregistrerEdition}>Enregistrer</Bouton></>}>

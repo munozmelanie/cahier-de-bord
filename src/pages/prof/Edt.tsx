@@ -35,11 +35,12 @@ export default function Edt() {
     const hauteur = (minutes(c.fin) - minutes(c.debut)) * PX
     return (
       <button key={c.id} type="button" onClick={() => setEdition(c)} title={`${fmtHeure(c.debut)} – ${fmtHeure(c.fin)} · ${c.libelle || m.court}`}
-        className={clsx('absolute inset-x-1 flex overflow-hidden rounded-lg px-2 text-left font-bold transition hover:brightness-105',
-          hauteur < 30 ? 'items-center text-[11px] leading-none' : 'flex-col justify-center text-xs')}
-        style={{ top: (minutes(c.debut) - bornes.debut) * PX, height: hauteur - 2, background: pause ? '#F1F3F8' : m.fond, color: pause ? '#8A93AB' : m.couleur }}>
-        {hauteur >= 30 && <span className="tabular-nums opacity-80">{fmtHeure(c.debut)}</span>}
-        {hauteur >= 12 && <span className="truncate">{c.libelle || m.court}</span>}
+        className={clsx('absolute inset-x-1 flex overflow-hidden rounded-lg text-left transition hover:brightness-[.98]',
+          pause ? 'bg-encre/[.035] px-2 text-brume' : 'border-l-[3px] pl-1.5 pr-2 text-encre',
+          hauteur < 30 ? 'items-center gap-1.5 text-[11px] leading-none' : 'flex-col justify-center text-xs')}
+        style={{ top: (minutes(c.debut) - bornes.debut) * PX, height: hauteur - 2, ...(pause ? {} : { background: m.fond, borderLeftColor: m.couleur }) }}>
+        {hauteur >= 30 && <span className="tabular-nums text-brume">{fmtHeure(c.debut)}</span>}
+        {hauteur >= 12 && <span className={clsx('truncate', pause ? 'font-medium' : 'font-semibold')}>{c.libelle || m.court}</span>}
       </button>
     )
   }
@@ -59,13 +60,13 @@ export default function Edt() {
               <div />
               {jours.map((j) => (
                 <div key={j} className="flex items-center justify-between px-2 pb-2">
-                  <span className="font-titre text-lg font-semibold">{NOMS_JOURS[j]}</span>
+                  <span className="text-[15px] font-semibold">{NOMS_JOURS[j]}</span>
                   <BoutonIcone icone={Plus} label={`Ajouter un créneau le ${NOMS_JOURS[j]}`} className="size-8" onClick={() => setEdition({ jour: j, type: 'cours' })} />
                 </div>
               ))}
               <div className="relative" style={{ height: (bornes.fin - bornes.debut) * PX }}>
                 {Array.from({ length: Math.floor(bornes.fin / 60) - Math.ceil(bornes.debut / 60) + 1 }, (_, i) => Math.ceil(bornes.debut / 60) + i).map((h) => (
-                  <span key={h} className="absolute right-2 -translate-y-1/2 text-[11px] font-bold text-brume" style={{ top: (h * 60 - bornes.debut) * PX }}>{h}h</span>
+                  <span key={h} className="absolute right-2 -translate-y-1/2 text-[11px] font-medium tabular-nums text-brume" style={{ top: (h * 60 - bornes.debut) * PX }}>{h}h</span>
                 ))}
               </div>
               {jours.map((j) => (
@@ -83,9 +84,9 @@ export default function Edt() {
               {liste.filter((c) => c.jour === Number(jourMobile)).map((c) => (
                 <li key={c.id}>
                   <button type="button" onClick={() => setEdition(c)} className="flex w-full items-center gap-3 rounded-2xl px-2 py-2 text-left hover:bg-white">
-                    <span className="w-24 shrink-0 text-sm font-bold tabular-nums text-brume">{fmtHeure(c.debut)} – {fmtHeure(c.fin)}</span>
+                    <span className="w-24 shrink-0 text-sm font-semibold tabular-nums text-brume">{fmtHeure(c.debut)} – {fmtHeure(c.fin)}</span>
                     <PastilleMatiere id={c.matiere} taille="s" pause={c.type === 'pause'} />
-                    <span className={clsx('font-bold', c.type === 'pause' && 'text-brume')}>{c.libelle || matiere(c.matiere).court}</span>
+                    <span className={clsx('font-semibold', c.type === 'pause' && 'text-brume')}>{c.libelle || matiere(c.matiere).court}</span>
                   </button>
                 </li>
               ))}

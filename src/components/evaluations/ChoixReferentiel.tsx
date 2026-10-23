@@ -39,7 +39,7 @@ export function ChoixReferentiel({ matiereLsu, choisis, onBasculer, onFermer }: 
             className="py-2 pl-9" autoFocus />
         </span>
         {matiereLsu && (
-          <span className="flex shrink-0 rounded-full bg-papier p-0.5 text-sm font-bold">
+          <span className="flex shrink-0 rounded-full bg-papier p-0.5 text-sm font-semibold">
             {[{ v: false, l: NOM_COURT_LSU[matiereLsu] ?? matiereLsu }, { v: true, l: 'Tout' }].map((o) => (
               <button key={o.l} type="button" onClick={() => setTout(o.v)} aria-pressed={tout === o.v}
                 className={clsx('rounded-full px-3 py-1.5 transition', tout === o.v ? 'bg-white text-bateau-fonce shadow-sm' : 'text-brume hover:text-encre')}>
@@ -58,7 +58,7 @@ export function ChoixReferentiel({ matiereLsu, choisis, onBasculer, onFermer }: 
           const nomSd = m.sousDomaines.length > 1 ? (DOMAINE_COURT[sd.id] ?? sd.nom) : null
           return (
             <div key={sd.id} className="flex flex-col gap-1">
-              <span className="flex items-center gap-1.5 text-xs font-bold" style={{ color: mat.couleur }} title={sd.nom}>
+              <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: mat.couleur }} title={sd.nom}>
                 <Icone className="size-3.5" strokeWidth={2.4} />
                 {filtre ? (nomSd ?? NOM_COURT_LSU[m.matiere]) : [NOM_COURT_LSU[m.matiere] ?? m.nom, nomSd].filter(Boolean).join(' · ')}
               </span>
@@ -67,7 +67,7 @@ export function ChoixReferentiel({ matiereLsu, choisis, onBasculer, onFermer }: 
                 return (
                   <button key={el.id} type="button" onClick={() => onBasculer(el, sd)} aria-pressed={pris}
                     className={clsx('flex items-start gap-2 rounded-xl px-2.5 py-2 text-left text-sm leading-snug transition',
-                      pris ? 'font-bold text-encre' : 'text-encre hover:bg-papier')}
+                      pris ? 'font-semibold text-encre' : 'text-encre hover:bg-papier')}
                     style={pris ? { background: mat.fond } : undefined}>
                     <span className={clsx('mt-px flex size-5 shrink-0 items-center justify-center rounded-full border-2', pris ? 'text-white' : 'bg-white')}
                       style={{ borderColor: mat.couleur, background: pris ? mat.couleur : undefined }}>

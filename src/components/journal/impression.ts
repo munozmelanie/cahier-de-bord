@@ -43,12 +43,12 @@ export function imprimerCahierJournal(classe: Classe, jours: string[], seances: 
     h1 { font-size: 18pt; margin: 0 0 4mm; } h2 { font-size: 14pt; margin: 0 0 3mm; text-transform: capitalize; }
     h3 { font-size: 11pt; margin: 0 0 2mm; text-transform: capitalize; }
     .recap { display: grid; grid-template-columns: repeat(${Math.min(jours.length, 4)}, 1fr); gap: 4mm; }
-    .recap-jour { border: 1px solid #E2E7F1; border-radius: 3mm; padding: 3mm; break-inside: avoid; }
+    .recap-jour { border: 1px solid #E5E7EC; border-radius: 3mm; padding: 3mm; break-inside: avoid; }
     .t { font-weight: bold; margin: 2mm 0 1mm; font-size: 9.5pt; color: #6A7593; } .vide { color: #A3ACC2; margin: 0; }
     ul { margin: 0; padding-left: 4mm; } li { margin: 0.5mm 0; }
     .page { break-before: page; }
     table { width: 100%; border-collapse: collapse; } th { text-align: left; background: #F5F7FC; font-size: 9pt; }
-    th, td { border: 1px solid #E2E7F1; padding: 2mm; vertical-align: top; } tr { break-inside: avoid; }
+    th, td { border: 1px solid #E5E7EC; padding: 2mm; vertical-align: top; } tr { break-inside: avoid; }
     .h { width: 15mm; } .m { width: 62mm; } .b { width: 45mm; }
     .mat { border-radius: 2mm; padding: 0.3mm 1.5mm; font-size: 8.5pt; font-weight: bold; }
     p { margin: 1mm 0 0; } .nf td { color: #A3ACC2; text-decoration: line-through; }

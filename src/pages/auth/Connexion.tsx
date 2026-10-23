@@ -12,7 +12,7 @@ export default function Connexion() {
     <div className="flex min-h-dvh flex-col items-center px-4 py-10">
       <div className="w-full max-w-md">
         <div className="mb-8 flex justify-center"><Logo /></div>
-        <div className="rounded-[28px] bg-white p-6 shadow-doux sm:p-8">
+        <div className="rounded-3xl bg-white p-6 shadow-doux sm:p-8">
           <div className="mb-6 flex justify-center">
             <Onglets valeur={mode} onChange={setMode} options={[
               { id: 'connexion', label: 'Connexion', icone: LogIn },
@@ -21,10 +21,10 @@ export default function Connexion() {
           </div>
           {MODE_DEMO && (
             <div className="mb-6 grid grid-cols-2 gap-3">
-              <button type="button" onClick={() => (db.auth as any).entrerComme('enseignant')} className="flex flex-col items-center gap-2 rounded-3xl bg-bateau-clair p-4 font-bold text-bateau-fonce transition hover:-translate-y-0.5">
+              <button type="button" onClick={() => (db.auth as any).entrerComme('enseignant')} className="flex flex-col items-center gap-2 rounded-3xl bg-bateau-clair p-4 font-semibold text-bateau-fonce transition hover:-translate-y-0.5">
                 <NotebookPen className="size-7" /> Enseignante
               </button>
-              <button type="button" onClick={() => (db.auth as any).entrerComme('parent')} className="flex flex-col items-center gap-2 rounded-3xl bg-[#FDE8F0] p-4 font-bold text-[#E0457B] transition hover:-translate-y-0.5">
+              <button type="button" onClick={() => (db.auth as any).entrerComme('parent')} className="flex flex-col items-center gap-2 rounded-3xl bg-[#FDE8F0] p-4 font-semibold text-[#E0457B] transition hover:-translate-y-0.5">
                 <Users className="size-7" /> Famille
               </button>
             </div>
@@ -33,7 +33,7 @@ export default function Connexion() {
         </div>
         {!MODE_DEMO && (
           <p className="mt-6 flex justify-center">
-            <a className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-bateau shadow-sm" href="?demo" title="Essayer avec des données fictives">
+            <a className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-bateau shadow-sm" href="?demo" title="Essayer avec des données fictives">
               <FlaskConical className="size-4" /> Démo
             </a>
           </p>
@@ -69,9 +69,9 @@ function FormConnexion() {
       <Champ label="E-mail">{(id) => <Saisie id={id} type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />}</Champ>
       <Champ label="Mot de passe">{(id) => <Saisie id={id} type="password" autoComplete="current-password" required value={mdp} onChange={(e) => setMdp(e.target.value)} />}</Champ>
       {erreur && <Erreur message={erreur} />}
-      {info && <p className="rounded-2xl bg-succes-clair px-4 py-3 text-sm font-bold text-succes">{info}</p>}
+      {info && <p className="rounded-2xl bg-succes-clair px-4 py-3 text-sm font-semibold text-succes">{info}</p>}
       <Bouton type="submit" taille="l" icone={LogIn} enCours={enCours}>Se connecter</Bouton>
-      <button type="button" onClick={oubli} className="text-sm font-bold text-brume underline">Mot de passe oublié ?</button>
+      <button type="button" onClick={oubli} className="text-sm font-semibold text-brume underline">Mot de passe oublié ?</button>
     </form>
   )
 }
@@ -116,7 +116,7 @@ function FormInscription() {
       <Champ label="E-mail">{(id) => <Saisie id={id} type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />}</Champ>
       <Champ label="Mot de passe">{(id) => <Saisie id={id} type="password" autoComplete="new-password" minLength={6} required placeholder="6 caractères min." value={mdp} onChange={(e) => setMdp(e.target.value)} />}</Champ>
       {erreur && <Erreur message={erreur} />}
-      {info && <p className="flex items-center gap-2 rounded-2xl bg-succes-clair px-4 py-3 text-sm font-bold text-succes"><Mail className="size-4" />{info}</p>}
+      {info && <p className="flex items-center gap-2 rounded-2xl bg-succes-clair px-4 py-3 text-sm font-semibold text-succes"><Mail className="size-4" />{info}</p>}
       <Bouton type="submit" taille="l" icone={KeyRound} enCours={enCours}>Créer</Bouton>
     </form>
   )

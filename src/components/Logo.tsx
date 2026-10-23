@@ -8,7 +8,7 @@ export function Logo({ sousTitre }: { sousTitre?: string }) {
       </span>
       <div className="min-w-0">
         <p className="font-titre text-xl font-semibold leading-none text-encre">Cahier de bord</p>
-        {sousTitre && <p className="mt-1 truncate text-xs font-bold text-brume">{sousTitre}</p>}
+        {sousTitre && <p className="mt-1 truncate text-xs font-semibold text-brume">{sousTitre}</p>}
       </div>
     </div>
   )

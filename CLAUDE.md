@@ -13,6 +13,9 @@ devoirs, carnet de liaison, évaluations, LSU, espace familles. Tout en françai
 - Fin de journée : `publication_automatique()` (pg_cron, toutes les 10 min de 13h à 18h59 UTC) appelle
   `publier_journee(classe, date)` après `reglages.heure_resume` (16:45). Les séances « prevue » passent « faite »,
   les « non_faite » sont exclues du résumé et leurs devoirs (devoirs.seance_id) ne sont pas publiés.
+- Accès remplaçant : lien secret `#/r/<jeton>` imprimé en QR code depuis le Cahier journal (migration 0005). RPC
+  `journal_remplacant(jeton, date)` ouverte à `anon`, lecture seule (séances, devoirs donnés, pauses, mot), dates de J-7 à J+14 ;
+  `nouveau_jeton_remplacant(classe, actif)` change ou coupe le lien ; le mot est dans `classes.reglages.mot_remplacant`.
 - Mode démo : `?demo` dans l'URL (données fictives en mémoire, `src/lib/demo.ts`). Ne jamais y mettre de vrais élèves.
 - Dépôt PUBLIC : aucune donnée réelle (élèves, école, familles) dans le code ni dans les fichiers SQL. Les données de la classe
   ne vivent que dans Supabase.

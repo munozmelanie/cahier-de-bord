@@ -1,9 +1,10 @@
-import { CalendarDays, CalendarPlus, Maximize2, Printer, Sparkles } from 'lucide-react'
+import { CalendarDays, CalendarPlus, Maximize2, Printer, QrCode, Sparkles } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AssistantIA, type DemandeIA } from '../../components/AssistantIA'
+import { AccesRemplacant } from '../../components/journal/AccesRemplacant'
 import { CalendrierSemaine } from '../../components/CalendrierSemaine'
 import { Chronologie } from '../../components/journal/Chronologie'
 import { SemaineHoraire } from '../../components/journal/SemaineHoraire'
@@ -28,14 +29,21 @@ function VueJour({ date }: { date: string }) {
   const classe = useClasse()
   const nav = useNavigate()
   const periode = periodeDe(date, classe.reglages)
+  const [qr, setQr] = useState(false)
   return (
+    <>
     <Journee
       date={date}
-      retour={<Link to={`/journal?semaine=${iso(lundiDe(new Date(date + 'T12:00:00')))}`} className="mb-1 inline-flex items-center gap-1 text-sm font-bold text-bateau" title="Semaine"><CalendarDays className="size-4" /></Link>}
+      retour={<Link to={`/journal?semaine=${iso(lundiDe(new Date(date + 'T12:00:00')))}`} className="mb-1 inline-flex items-center gap-1 text-sm font-semibold text-bateau" title="Semaine"><CalendarDays className="size-4" /></Link>}
       titre={maj1(fmtJour(date))}
       sousTitre={periode ? <Badge>{periode.id} · S{semaineDansPeriode(date, periode)}</Badge> : undefined}
-      actions={<NavPas label="Jour" precedent={() => nav(`/journal/${jourClasseSuivant(date, classe.reglages, -1)}`)} suivant={() => nav(`/journal/${jourClasseSuivant(date, classe.reglages)}`)} auMilieu={() => nav(`/journal/${aujourdhui()}`)} />}
+      actions={<>
+        <BoutonIcone icone={QrCode} label="Accès remplaçant (QR code)" variante="secondaire" onClick={() => setQr(true)} />
+        <NavPas label="Jour" precedent={() => nav(`/journal/${jourClasseSuivant(date, classe.reglages, -1)}`)} suivant={() => nav(`/journal/${jourClasseSuivant(date, classe.reglages)}`)} auMilieu={() => nav(`/journal/${aujourdhui()}`)} />
+      </>}
     />
+    <AccesRemplacant ouverte={qr} onFermer={() => setQr(false)} />
+    </>
   )
 }
 
@@ -52,6 +60,7 @@ function VueSemaine() {
   const devoirs = useDevoirsDonnes(lundi, fin)
   const [ia, setIa] = useState<DemandeIA | null>(null)
   const [remplissage, setRemplissage] = useState(false)
+  const [qr, setQr] = useState(false)
   const periode = periodeDe(jours.find((j) => periodeDe(j, classe.reglages)) ?? lundi, classe.reglages)
   const edt = useEdt(periode?.id)
   const ecrire = useEcrire()
@@ -80,6 +89,7 @@ function VueSemaine() {
         actions={<>
           <BoutonIcone icone={Sparkles} label="Remplir la semaine avec ChatGPT" variante="secondaire" onClick={() => setIa({ type: 'semaine', lundi })} />
           <BoutonIcone icone={CalendarPlus} label="Remplir depuis l'emploi du temps" variante="secondaire" onClick={remplirSemaine} disabled={remplissage} />
+          <BoutonIcone icone={QrCode} label="Accès remplaçant (QR code)" variante="secondaire" onClick={() => setQr(true)} />
           <BoutonIcone icone={Printer} label="Imprimer la semaine" variante="secondaire" onClick={() => { if (!imprimerCahierJournal(classe, jours, seances.data ?? [], devoirs.data ?? [])) toast('Autorise les fenêtres pour imprimer', 'erreur') }} />
           <NavPas label={fmtCourtSansJour(lundi)} precedent={() => setLundi(decaler(lundi, -7))} suivant={() => setLundi(decaler(lundi, 7))} auMilieu={() => setLundi(lundiCourant())} />
         </>}
@@ -100,13 +110,14 @@ function VueSemaine() {
                 return l.length
                   ? <Chronologie seances={l} pauses={(edt.data ?? []).filter((c) => c.type === 'pause' && c.jour === numJour(j))} maintenant={null}
                       onOuvrir={() => nav(`/journal/${j}`)} onStatut={(x, st) => ecrire.mutate({ op: 'update', table: 'seances', id: x.id, patch: { statut: st } })} />
-                  : <button type="button" onClick={() => nav(`/journal/${j}`)} className="rounded-2xl border-2 border-dashed border-trait py-6 text-brume" aria-label="Préparer la journée"><CalendarPlus className="mx-auto size-6" /></button>
+                  : <button type="button" onClick={() => nav(`/journal/${j}`)} className="rounded-2xl border border-dashed border-trait py-6 text-brume" aria-label="Préparer la journée"><CalendarPlus className="mx-auto size-6" /></button>
               }}
             />
           </div>
         </>
       )}
       <AssistantIA demande={ia} onFermer={() => setIa(null)} />
+      <AccesRemplacant ouverte={qr} onFermer={() => setQr(false)} />
     </>
   )
 }

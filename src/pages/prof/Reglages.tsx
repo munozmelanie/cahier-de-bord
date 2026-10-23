@@ -19,9 +19,9 @@ function Bloc({ titre, icone: Icone, couleur, fond, children, actions, className
 }) {
   return (
     <section className={clsx('rounded-3xl bg-white p-4 shadow-doux sm:p-5', className)} aria-label={titre}>
-      <div className="mb-4 flex items-center gap-3">
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl" style={{ background: fond, color: couleur }}><Icone className="size-6" /></span>
-        <span className="font-titre text-lg font-semibold" style={{ color: couleur }}>{titre}</span>
+      <div className="mb-4 flex items-center gap-2.5">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg" style={{ background: fond, color: couleur }}><Icone className="size-4" /></span>
+        <h2 className="text-[15px] font-semibold text-encre">{titre}</h2>
         <span className="ml-auto">{actions}</span>
       </div>
       {children}
@@ -90,7 +90,7 @@ export default function Reglages() {
       <Entete titre="Réglages" actions={<Bouton icone={Save} onClick={enregistrer} enCours={ecrire.isPending}>Enregistrer</Bouton>} />
 
       <div className="grid items-start gap-4 lg:grid-cols-2">
-        <Bloc titre="Classe" icone={School} couleur="#2E5BFF" fond="#E6ECFF">
+        <Bloc titre="Classe" icone={School} couleur="#3358E0" fond="#ECF0FF">
           <div className="grid gap-3 sm:grid-cols-2">
             <Champ label="Classe">{(id) => <Saisie id={id} value={c.nom ?? ''} onChange={(e) => setC({ ...c, nom: e.target.value })} />}</Champ>
             <Champ label="Nom pour les familles">{(id) => <Saisie id={id} value={c.enseignant_nom ?? ''} onChange={(e) => setC({ ...c, enseignant_nom: e.target.value })} />}</Champ>
@@ -107,7 +107,7 @@ export default function Reglages() {
               return (
                 <button key={j.v} type="button" aria-pressed={actif}
                   onClick={() => maj({ jours: actif ? jours.filter((x) => x !== j.v) : [...jours, j.v] })}
-                  className={clsx('h-11 w-14 rounded-2xl font-bold transition', actif ? 'bg-bateau text-white' : 'bg-encre/5 text-brume')}>
+                  className={clsx('h-11 w-14 rounded-2xl font-semibold transition', actif ? 'bg-bateau text-white' : 'bg-encre/5 text-brume')}>
                   {j.l}
                 </button>
               )
@@ -119,9 +119,9 @@ export default function Reglages() {
           <div className="flex flex-wrap items-center gap-4">
             <Bascule actif={r.resume_auto ?? true} onChange={(v) => maj({ resume_auto: v })} label="Automatique" />
             <label htmlFor="heure-resume" className="ml-auto flex items-center gap-2">
-              <Clock className="size-5 text-[#7B4DFF]" aria-hidden />
+              <Clock className="size-4 text-brume" aria-hidden />
               <input id="heure-resume" type="time" value={r.heure_resume ?? '16:45'} onChange={(e) => maj({ heure_resume: e.target.value })} aria-label="Heure"
-                className="h-11 rounded-xl border border-trait bg-papier px-3 font-bold tabular-nums focus:border-bateau focus:outline-none" />
+                className="h-11 rounded-xl border border-trait bg-papier px-3 font-semibold tabular-nums focus:border-bateau focus:outline-none" />
             </label>
           </div>
         </Bloc>
@@ -131,7 +131,7 @@ export default function Reglages() {
             {periodes.map((p, i) => (
               <li key={i} className="grid grid-cols-[2.75rem_minmax(0,1fr)_minmax(0,1fr)_2.25rem] items-center gap-1.5 sm:grid-cols-[3.5rem_minmax(0,1fr)_minmax(0,1fr)_2.5rem] sm:gap-2">
                 <input value={p.id} onChange={(e) => setPeriode(i, { id: e.target.value })} aria-label="Nom de la période"
-                  className="h-10 w-full rounded-xl bg-bateau-clair text-center font-bold text-bateau-fonce focus:outline-none" />
+                  className="h-10 w-full rounded-xl bg-bateau-clair text-center font-semibold text-bateau-fonce focus:outline-none" />
                 <input type="date" value={p.debut} onChange={(e) => setPeriode(i, { debut: e.target.value })} aria-label="Début" className={champDate} />
                 <input type="date" value={p.fin} onChange={(e) => setPeriode(i, { fin: e.target.value })} aria-label="Fin" className={champDate} />
                 <BoutonIcone icone={Trash2} label="Supprimer" onClick={() => maj({ periodes: periodes.filter((_, k) => k !== i) })} className="size-9" />
@@ -145,7 +145,7 @@ export default function Reglages() {
             {vacances.map((v, i) => (
               <li key={i} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.5rem] gap-2 border-b border-trait pb-2 last:border-0 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_2.5rem] sm:border-0 sm:pb-0">
                 <input value={v.nom} onChange={(e) => setVac(i, { nom: e.target.value })} placeholder="Nom" aria-label="Nom des vacances"
-                  className="col-span-2 h-10 min-w-0 rounded-xl border border-trait bg-papier px-3 font-bold focus:border-bateau focus:outline-none sm:col-span-1" />
+                  className="col-span-2 h-10 min-w-0 rounded-xl border border-trait bg-papier px-3 font-semibold focus:border-bateau focus:outline-none sm:col-span-1" />
                 <BoutonIcone icone={Trash2} label="Supprimer" onClick={() => maj({ vacances: vacances.filter((_, k) => k !== i) })} className="size-9 sm:order-last" />
                 <input type="date" value={v.debut} onChange={(e) => setVac(i, { debut: e.target.value })} aria-label="Début" className={champDate} />
                 <input type="date" value={v.fin} onChange={(e) => setVac(i, { fin: e.target.value })} aria-label="Fin" className={champDate} />
@@ -178,7 +178,7 @@ export default function Reglages() {
             {bilans.map((b, i) => (
               <li key={i} className="grid grid-cols-2 items-center gap-2 sm:grid-cols-3">
                 <input value={b.nom} onChange={(e) => setBilan(i, { nom: e.target.value })} aria-label="Nom du bilan"
-                  className="col-span-2 h-10 min-w-0 rounded-xl border border-trait bg-papier px-3 text-sm font-bold focus:border-bateau focus:outline-none sm:col-span-1" />
+                  className="col-span-2 h-10 min-w-0 rounded-xl border border-trait bg-papier px-3 text-sm font-semibold focus:border-bateau focus:outline-none sm:col-span-1" />
                 <input type="date" value={b.debut} onChange={(e) => setBilan(i, { debut: e.target.value })} aria-label="Début" className={champDate} />
                 <input type="date" value={b.fin} onChange={(e) => setBilan(i, { fin: e.target.value })} aria-label="Fin" className={champDate} />
               </li>
@@ -189,7 +189,7 @@ export default function Reglages() {
         <Bloc titre="Code collègue" icone={KeyRound} couleur="#4F5D7A" fond="#E9ECF3">
           {code ? (
             <div className="flex flex-wrap items-center gap-3">
-              <span className="rounded-2xl bg-bateau-clair px-4 py-2 font-titre text-xl tracking-[0.15em] text-bateau-fonce">{code}</span>
+              <span className="rounded-xl bg-papier px-4 py-2 text-lg font-bold tracking-wider text-encre">{code}</span>
               <BoutonIcone icone={copie ? Check : Copy} label="Copier" variante="secondaire"
                 onClick={() => navigator.clipboard?.writeText(code).then(() => { setCopie(true); toast('Code copié') }).catch(() => toast('Sélectionne le code pour le copier', 'erreur'))} />
             </div>

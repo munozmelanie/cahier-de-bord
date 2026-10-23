@@ -97,7 +97,7 @@ export default function Progressions() {
           <RondStatut statut={it.statut} couleur={mat.couleur} />
         </button>
         <button type="button" onClick={() => setEdition(it)} title={it.titre}
-          className={clsx('min-w-0 flex-1 text-left text-xs font-bold leading-snug text-encre', it.statut === 'fait' && 'opacity-50')}>
+          className={clsx('min-w-0 flex-1 text-left text-xs font-semibold leading-snug text-encre', it.statut === 'fait' && 'opacity-50')}>
           <span className="line-clamp-3">{titreCourt(it.titre)}</span>
         </button>
       </div>
@@ -141,7 +141,7 @@ export default function Progressions() {
               {colonnes.map((s) => (
                 <div key={String(s)} className={clsx('flex flex-col items-center rounded-t-2xl py-2 leading-none', s != null && s === semaineActuelle && 'bg-ambre-clair/60')}>
                   <span className={clsx('rounded-full px-2.5 py-1 font-titre text-base font-semibold', s != null && s === semaineActuelle ? 'bg-ambre text-white' : 'text-encre')}>{s != null ? `S${s}` : '—'}</span>
-                  {s != null && periode && <span className="mt-1 text-[11px] font-bold text-brume">{dateCourte(lundiSemaine(periode, s))}</span>}
+                  {s != null && periode && <span className="mt-1 text-[11px] font-semibold text-brume">{dateCourte(lundiSemaine(periode, s))}</span>}
                 </div>
               ))}
               {parMatiere.map(([m, items]) => (
@@ -167,7 +167,7 @@ export default function Progressions() {
                     className={clsx('relative flex size-12 shrink-0 items-center justify-center rounded-2xl transition', actif ? 'ring-[3px] ring-encre' : '')}
                     style={{ background: mat.fond, color: mat.couleur }}>
                     <I className="size-6" />
-                    <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-white px-1 text-center text-[10px] font-bold leading-5 text-encre shadow-sm">
+                    <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-white px-1 text-center text-[10px] font-semibold leading-5 text-encre shadow-sm">
                       {items.filter((i) => i.statut === 'fait').length}/{items.length}
                     </span>
                   </button>
@@ -182,7 +182,7 @@ export default function Progressions() {
                   <div key={String(s)} className={clsx('flex gap-2 rounded-3xl p-2', actuelle ? 'bg-ambre-clair' : 'bg-white shadow-doux')}>
                     <span className={clsx('flex w-11 shrink-0 flex-col items-center justify-center rounded-2xl py-1 leading-none', actuelle ? 'bg-ambre text-white' : 'bg-papier text-encre')}>
                       <span className="font-titre text-base font-semibold">{s != null ? `S${s}` : '—'}</span>
-                      {s != null && periode && <span className="mt-0.5 text-[10px] font-bold opacity-80">{format(parseISO(lundiSemaine(periode, s)), 'd/MM')}</span>}
+                      {s != null && periode && <span className="mt-0.5 text-[10px] font-semibold opacity-80">{format(parseISO(lundiSemaine(periode, s)), 'd/MM')}</span>}
                     </span>
                     <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                       {l.map(carte)}
@@ -218,7 +218,7 @@ export default function Progressions() {
               return (
                 <button key={String(s)} type="button" role="radio" aria-checked={actif} onClick={() => setEdition((x) => ({ ...x, semaine: s }))}
                   title={s != null && periode ? `Semaine du ${dateCourte(lundiSemaine(periode, s))}` : 'Sans semaine'}
-                  className={clsx('h-9 min-w-11 rounded-full px-3 text-sm font-bold transition', actif ? 'bg-encre text-white' : 'border border-trait bg-white text-encre',
+                  className={clsx('h-9 min-w-11 rounded-full px-3 text-sm font-semibold transition', actif ? 'bg-encre text-white' : 'border border-trait bg-white text-encre',
                     s != null && s === semaineActuelle && !actif && 'border-ambre')}>
                   {s != null ? `S${s}` : '—'}
                 </button>
@@ -231,7 +231,7 @@ export default function Progressions() {
               const c = matiere(edition?.matiere).couleur
               return (
                 <button key={st} type="button" role="radio" aria-checked={actif} onClick={() => setEdition((x) => ({ ...x, statut: st }))}
-                  className={clsx('inline-flex h-9 items-center gap-2 rounded-full px-3 text-sm font-bold transition', actif ? 'bg-encre text-white' : 'border border-trait bg-white text-encre')}>
+                  className={clsx('inline-flex h-9 items-center gap-2 rounded-full px-3 text-sm font-semibold transition', actif ? 'bg-encre text-white' : 'border border-trait bg-white text-encre')}>
                   <RondStatut statut={st} couleur={c} taille={16} /> {STATUTS_PROG[st].label}
                 </button>
               )
@@ -283,7 +283,7 @@ function CopierPeriode({ ouverte, onFermer, depuis, periodes, items }: {
             const actif = !exclues.includes(m)
             return (
               <button key={m} type="button" aria-pressed={actif} onClick={() => setExclues((x) => (actif ? [...x, m] : x.filter((y) => y !== m)))}
-                className={clsx('flex items-center gap-2 rounded-2xl p-2 text-left text-sm font-bold transition', actif ? 'ring-2 ring-encre' : 'opacity-40')}
+                className={clsx('flex items-center gap-2 rounded-2xl p-2 text-left text-sm font-semibold transition', actif ? 'ring-2 ring-encre' : 'opacity-40')}
                 style={{ background: mat.fond, color: mat.couleur }}>
                 <I className="size-5" /> <span className="truncate text-encre">{mat.court}</span>
               </button>

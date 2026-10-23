@@ -10,7 +10,8 @@
   }
   h1, h2, h3 { text-wrap: balance; }
   input[type='time'], input[type='date'] { min-height: 2.75rem; }
-  :focus-visible { outline-color: #2E5BFF; }
+  :focus-visible { outline-color: #3358E0; }
+  ::selection { background: #DCE4FD; }
 }
 
 @media (prefers-reduced-motion: reduce) {

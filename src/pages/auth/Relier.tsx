@@ -68,10 +68,10 @@ export default function Relier() {
     <div className="flex min-h-dvh flex-col items-center px-4 py-10">
       <div className="w-full max-w-md">
         <div className="mb-8 flex justify-center"><Logo /></div>
-        <form onSubmit={envoyer} className="flex flex-col gap-4 rounded-[28px] bg-white p-6 shadow-doux sm:p-8">
+        <form onSubmit={envoyer} className="flex flex-col gap-4 rounded-3xl bg-white p-6 shadow-doux sm:p-8">
           <div className="flex items-center gap-3">
             <span className="flex size-11 items-center justify-center rounded-2xl bg-bateau-clair text-bateau"><KeyRound className="size-6" /></span>
-            <p className="min-w-0 truncate text-sm font-bold text-brume">{email}</p>
+            <p className="min-w-0 truncate text-sm font-semibold text-brume">{email}</p>
           </div>
           <ChampsCode code={code} setCode={setCode} nom={nom} setNom={setNom} lien={lien} setLien={setLien} />
           {erreur && <Erreur message={erreur} />}

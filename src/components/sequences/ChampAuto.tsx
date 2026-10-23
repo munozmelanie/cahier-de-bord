@@ -27,7 +27,7 @@ export function TexteAuto({ valeur, onSave, placeholder, label, className, etiqu
   if (!etiquette) return champ
   return (
     <div className={classeBloc ?? 'flex min-w-0 flex-col gap-1'}>
-      <span className="px-1 text-xs font-bold text-brume">{label}</span>
+      <span className="px-1 text-xs font-semibold text-brume">{label}</span>
       {champ}
     </div>
   )

@@ -1,16 +1,24 @@
-import { CalendarX2, CheckCheck, HandHelping, Quote } from 'lucide-react'
+import clsx from 'clsx'
+import { Wand2 } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
-import { Saisie, Texte } from '../ui'
+import { Bouton, Saisie, Texte } from '../ui'
 import { useEcrire } from '../../lib/donnees'
-import { LSU, matiere } from '../../lib/matieres'
+import { LSU, matiere, type MatiereLsu } from '../../lib/matieres'
+import { MODE_DEMO } from '../../lib/supabase'
 import type { Eleve, LsuBilan } from '../../lib/types'
 import { EtatEnregistrement } from '../evaluations/EtatEnregistrement'
-import { ChoixNiveau } from './ChoixNiveau'
-import { DOMAINE_COURT, ICONE_LSU, NOM_COURT_LSU, useEnregistrementDiffere } from './outils'
+import { EnteteNiveaux, LigneNiveaux } from './Niveaux'
+import { ICONE_LSU, useEnregistrementDiffere } from './outils'
 
 type Brouillon = Pick<LsuBilan, 'positions' | 'appreciations' | 'appreciation_generale' | 'absences' | 'accompagnement'>
 
-/** Livret d'un élève pour un bilan. Monté avec key = élève : changer d'élève enregistre ce qui attend. */
+const CHAMP_DOUX = 'border-transparent bg-papier hover:border-trait focus:bg-white'
+
+/**
+ * Livret d'un élève pour un bilan, présenté comme le bilan périodique du LSU :
+ * une ligne par sous-domaine, quatre colonnes de positionnement, une appréciation par matière.
+ * Monté avec key = élève : changer d'élève enregistre ce qui attend.
+ */
 export function FicheEleve({ classeId, eleve, bilan, ligne, proposees, entete }: {
   classeId: string
   eleve: Eleve
@@ -51,73 +59,88 @@ export function FicheEleve({ classeId, eleve, bilan, ligne, proposees, entete }:
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center gap-3">
         {entete}
-        <div className="flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-3">
           {aValider.length > 0 && (
-            <button type="button" onClick={toutValider} title="Valider les propositions" aria-label={`Valider les ${aValider.length} propositions`}
-              className="relative flex size-10 items-center justify-center rounded-full bg-bateau-clair text-bateau transition hover:bg-bateau/15">
-              <CheckCheck className="size-5" />
-              <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-bateau px-1 text-center text-[11px] font-bold leading-5 text-white">{aValider.length}</span>
-            </button>
+            <Bouton variante="doux" taille="s" icone={Wand2} onClick={toutValider} title="Reprendre les niveaux calculés d'après les évaluations">
+              Valider {aValider.length} proposition{aValider.length > 1 ? 's' : ''}
+            </Bouton>
           )}
           <EtatEnregistrement etat={etat} />
         </div>
       </div>
 
-      <div className="grid items-start gap-3 lg:grid-cols-2">
-        {LSU.map((m) => {
-          const mat = matiere(ICONE_LSU[m.id])
-          const Icone = mat.icone
-          const unSeul = m.domaines.length === 1
-          return (
-            <section key={m.id} className="flex flex-col gap-3 rounded-[26px] p-4" style={{ background: mat.fond }} aria-label={m.nom}>
-              <div className="flex items-center gap-3">
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm" style={{ color: mat.couleur }}>
-                  <Icone className="size-6" strokeWidth={2.2} />
-                </span>
-                <span className="min-w-0 flex-1 truncate font-titre text-lg font-semibold text-encre" title={m.nom}>{NOM_COURT_LSU[m.id] ?? m.nom}</span>
-                {unSeul && (
-                  <ChoixNiveau label={m.nom} valeur={b.positions[m.domaines[0].id]} proposition={proposees[m.domaines[0].id]} onChange={(v) => position(m.domaines[0].id, v)} />
-                )}
-              </div>
-              {!unSeul && m.domaines.map((d) => (
-                <div key={d.id} className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="min-w-0 text-sm font-bold" style={{ color: mat.couleur }} title={d.nom}>{DOMAINE_COURT[d.id] ?? d.nom}</span>
-                  <ChoixNiveau label={d.nom} valeur={b.positions[d.id]} proposition={proposees[d.id]} onChange={(v) => position(d.id, v)} />
-                </div>
-              ))}
-              <Texte
-                aria-label={`Appréciation en ${m.nom}`}
-                placeholder="Appréciation"
-                className="border-transparent bg-white/90"
-                value={b.appreciations[m.id] ?? ''}
-                onChange={(e) => maj({ appreciations: { ...b.appreciations, [m.id]: e.target.value } })}
-              />
-            </section>
-          )
-        })}
+      {/* Noms des colonnes, toujours visibles en défilant */}
+      <div className={clsx('sticky z-10 -mb-2 flex items-center rounded-2xl bg-papier/95 px-4 py-2 backdrop-blur', MODE_DEMO ? 'top-9' : 'top-0')}>
+        <span className="hidden flex-1 text-xs font-semibold text-brume sm:block">Objectifs d'apprentissage</span>
+        <EnteteNiveaux />
       </div>
 
-      <section className="flex flex-col gap-3 rounded-3xl bg-white p-4 shadow-doux" aria-label="Appréciation générale">
-        <div className="flex items-start gap-3">
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-bateau-clair text-bateau"><Quote className="size-6" /></span>
-          <Texte rows={3} aria-label="Appréciation générale" placeholder="Appréciation générale" value={b.appreciation_generale ?? ''}
+      {LSU.map((m) => (
+        <Matiere key={m.id} m={m} b={b} proposees={proposees} position={position}
+          appreciation={(t) => maj({ appreciations: { ...b.appreciations, [m.id]: t } })} />
+      ))}
+
+      <section className="flex flex-col gap-4 rounded-3xl bg-white p-4 shadow-doux" aria-label="Bilan de la période">
+        <h3 className="text-[15px] font-semibold text-encre">Bilan de la période</h3>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm text-brume">Appréciation générale</span>
+          <Texte rows={3} className={CHAMP_DOUX} value={b.appreciation_generale ?? ''}
             onChange={(e) => maj({ appreciation_generale: e.target.value })} />
-        </div>
-        <div className="grid gap-3 sm:grid-cols-[auto_1fr]">
-          <label className="flex items-center gap-3" title="Absences (demi-journées)">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-alerte-clair text-alerte"><CalendarX2 className="size-6" /></span>
-            <Saisie type="number" inputMode="numeric" min={0} value={b.absences ?? ''} aria-label="Absences en demi-journées" placeholder="0"
-              className="w-24 text-center font-titre text-lg"
+        </label>
+        <div className="grid gap-4 sm:grid-cols-[13rem_1fr]">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm text-brume">Absences (demi-journées)</span>
+            <Saisie type="number" inputMode="numeric" min={0} value={b.absences ?? ''} placeholder="0" className={CHAMP_DOUX}
               onChange={(e) => maj({ absences: e.target.value === '' ? null : Math.max(0, Number(e.target.value)) })} />
           </label>
-          <label className="flex items-center gap-3" title="Accompagnement (facultatif)">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-ambre-clair text-ambre-fonce"><HandHelping className="size-6" /></span>
-            <Saisie value={b.accompagnement ?? ''} aria-label="Accompagnement" placeholder="Accompagnement" onChange={(e) => maj({ accompagnement: e.target.value })} />
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm text-brume">Accompagnement</span>
+            <Saisie value={b.accompagnement ?? ''} placeholder="PPRE, PAP, PPS…" className={CHAMP_DOUX}
+              onChange={(e) => maj({ accompagnement: e.target.value })} />
           </label>
         </div>
       </section>
     </div>
+  )
+}
+
+function Matiere({ m, b, proposees, position, appreciation }: {
+  m: MatiereLsu; b: Brouillon; proposees: Record<string, number>
+  position: (d: string, v: number | undefined) => void; appreciation: (t: string) => void
+}) {
+  const couleur = matiere(ICONE_LSU[m.id]).couleur
+  const unSeul = m.domaines.length === 1
+  const titre = (
+    <h3 className="flex min-w-0 flex-1 items-center gap-2.5 text-[15px] font-semibold text-encre">
+      <span className="size-2.5 shrink-0 rounded-full" style={{ background: couleur }} />
+      {m.nom}
+    </h3>
+  )
+  return (
+    <section className="overflow-hidden rounded-3xl bg-white shadow-doux" aria-label={m.nom}>
+      {unSeul ? (
+        <div className="flex flex-col gap-1 px-4 py-2 sm:flex-row sm:items-center">
+          <div className="flex-1 py-1.5">{titre}</div>
+          <LigneNiveaux label={m.nom} valeur={b.positions[m.domaines[0].id]} proposition={proposees[m.domaines[0].id]}
+            onChange={(v) => position(m.domaines[0].id, v)} />
+        </div>
+      ) : (
+        <>
+          <div className="px-4 pb-1 pt-3.5">{titre}</div>
+          {m.domaines.map((d) => (
+            <div key={d.id} className="flex flex-col gap-0.5 px-4 py-1 sm:flex-row sm:items-center">
+              <span className="min-w-0 flex-1 pl-5 pt-1.5 text-sm text-encre/85 sm:pt-0">{d.nom}</span>
+              <LigneNiveaux label={d.nom} valeur={b.positions[d.id]} proposition={proposees[d.id]} onChange={(v) => position(d.id, v)} />
+            </div>
+          ))}
+        </>
+      )}
+      <div className="px-4 pb-3.5 pt-1">
+        <Texte rows={1} aria-label={`Appréciation en ${m.nom}`} placeholder="Appréciation" className={clsx(CHAMP_DOUX, 'text-[15px]')}
+          value={b.appreciations[m.id] ?? ''} onChange={(e) => appreciation(e.target.value)} />
+      </div>
+    </section>
   )
 }

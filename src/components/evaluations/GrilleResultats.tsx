@@ -95,8 +95,8 @@ export function GrilleResultats({ evaluation, eleves }: { evaluation: Evaluation
             {items.indexOf(ouverte) + 1}
           </span>
           <span className="min-w-[11rem] flex-1">
-            <span className="block font-bold leading-snug text-encre">{ouverte.libelle}</span>
-            {ouverte.domaine && <span className="block text-xs font-bold text-brume" title={nomDomaine.get(ouverte.domaine)}>{DOMAINE_COURT[ouverte.domaine] ?? nomDomaine.get(ouverte.domaine)}</span>}
+            <span className="block font-semibold leading-snug text-encre">{ouverte.libelle}</span>
+            {ouverte.domaine && <span className="block text-xs font-semibold text-brume" title={nomDomaine.get(ouverte.domaine)}>{DOMAINE_COURT[ouverte.domaine] ?? nomDomaine.get(ouverte.domaine)}</span>}
           </span>
           <span className="ml-auto flex items-center gap-1.5" title="Remplir les cases vides">
             <PaintBucket className="size-5 text-bateau" aria-hidden />
@@ -140,7 +140,7 @@ export function GrilleResultats({ evaluation, eleves }: { evaluation: Evaluation
           <tbody>
             {eleves.map((el, l) => (
               <tr key={el.id} className="group">
-                <th scope="row" className="sticky left-0 z-10 border-t border-trait bg-white px-3 py-1.5 text-left font-bold text-encre group-hover:bg-papier">
+                <th scope="row" className="sticky left-0 z-10 border-t border-trait bg-white px-3 py-1.5 text-left font-semibold text-encre group-hover:bg-papier">
                   {el.prenom}
                 </th>
                 {items.map((it, c) => {

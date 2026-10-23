@@ -28,13 +28,13 @@ export function SemaineHoraire({ jours, seances, pauses, reglages, onJour }: {
         {jours.map((j) => (
           <button key={j} type="button" onClick={() => onJour(j)} className="mb-2 flex items-center justify-center gap-2 rounded-2xl py-1.5 hover:bg-papier">
             <span className={clsx('flex size-10 flex-col items-center justify-center rounded-2xl leading-none', j === auj ? 'bg-bateau text-white' : 'bg-papier text-encre')}>
-              <span className="font-titre text-base font-semibold">{fmtNumero(j)}</span>
-              <span className="text-[10px] font-bold uppercase">{jourCourt(j)}</span>
+              <span className="text-base font-bold">{fmtNumero(j)}</span>
+              <span className="text-[11px] font-medium">{jourCourt(j)}</span>
             </span>
           </button>
         ))}
         <div className="relative" style={{ height: y(fin) }}>
-          {heures.map((h) => <span key={h} className="absolute right-2 -translate-y-1/2 font-titre text-xs font-semibold text-brume" style={{ top: y(h) }}>{h / 60}h</span>)}
+          {heures.map((h) => <span key={h} className="absolute right-2 -translate-y-1/2 text-xs font-medium tabular-nums text-brume" style={{ top: y(h) }}>{h / 60}h</span>)}
         </div>
         {jours.map((j) => {
           const vac = vacancesDe(j, reglages)
@@ -43,11 +43,11 @@ export function SemaineHoraire({ jours, seances, pauses, reglages, onJour }: {
             <div key={j} className="relative border-l border-trait" style={{ height: y(fin) }}>
               {heures.map((h) => <div key={h} className="absolute inset-x-0 border-t border-trait/70" style={{ top: y(h) }} />)}
               {vac ? (
-                <div className="absolute inset-1 flex items-center justify-center rounded-2xl bg-ambre-clair text-center text-sm font-bold text-ambre-fonce">{vac.nom}</div>
+                <div className="absolute inset-1 flex items-center justify-center rounded-xl bg-ambre-clair text-center text-sm font-medium text-ambre-fonce">{vac.nom}</div>
               ) : (
                 <>
                   {pauses.filter((p) => p.jour === numJour(j)).map((p) => (
-                    <div key={p.id} className="absolute inset-x-1 rounded-lg" style={{ top: y(minutes(p.debut)) + 1, height: Math.max(y(minutes(p.fin)) - y(minutes(p.debut)) - 2, 3), background: 'repeating-linear-gradient(135deg, #F1F3F8, #F1F3F8 5px, transparent 5px, transparent 10px)' }} />
+                    <div key={p.id} className="absolute inset-x-1 rounded-md bg-encre/[.035]" style={{ top: y(minutes(p.debut)) + 1, height: Math.max(y(minutes(p.fin)) - y(minutes(p.debut)) - 2, 3) }} />
                   ))}
                   {duJour.map((s) => {
                     const m = matiere(s.matiere)
@@ -55,15 +55,15 @@ export function SemaineHoraire({ jours, seances, pauses, reglages, onJour }: {
                     const h = y(minutes(s.fin)) - y(minutes(s.debut)) - 3
                     return (
                       <button key={s.id} type="button" onClick={() => onJour(j)} title={s.titre}
-                        className={clsx('absolute inset-x-1 flex items-center gap-1.5 overflow-hidden rounded-xl px-1.5 text-left transition hover:brightness-105', s.statut === 'non_faite' && 'opacity-50')}
-                        style={{ top: y(minutes(s.debut)) + 1.5, height: h, background: m.fond, color: m.couleur }}>
-                        {h >= 18 && <Icone className="size-3.5 shrink-0" strokeWidth={2.4} />}
-                        {h >= 12 && <span className={clsx('min-w-0 font-bold leading-tight text-encre', h >= 34 ? 'line-clamp-2 text-xs' : 'truncate text-[11px]', s.statut === 'non_faite' && 'line-through')}>{s.titre || m.court}</span>}
+                        className={clsx('absolute inset-x-1 flex items-center gap-1.5 overflow-hidden rounded-lg border-l-[3px] px-1.5 text-left transition hover:brightness-[.98]', s.statut === 'non_faite' && 'opacity-50')}
+                        style={{ top: y(minutes(s.debut)) + 1.5, height: h, background: m.fond, color: m.couleur, borderLeftColor: m.couleur }}>
+                        {h >= 18 && <Icone className="size-3.5 shrink-0" strokeWidth={2.2} />}
+                        {h >= 12 && <span className={clsx('min-w-0 font-semibold leading-tight text-encre', h >= 34 ? 'line-clamp-2 text-xs' : 'truncate text-[11px]', s.statut === 'non_faite' && 'line-through')}>{s.titre || m.court}</span>}
                       </button>
                     )
                   })}
                   {!duJour.length && (
-                    <button type="button" onClick={() => onJour(j)} aria-label="Préparer la journée" className="absolute inset-1 rounded-2xl border-2 border-dashed border-trait" />
+                    <button type="button" onClick={() => onJour(j)} aria-label="Préparer la journée" className="absolute inset-1 rounded-xl border border-dashed border-trait hover:bg-papier" />
                   )}
                 </>
               )}

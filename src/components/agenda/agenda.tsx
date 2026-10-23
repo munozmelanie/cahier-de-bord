@@ -9,7 +9,7 @@ export const TYPES_AGENDA: Record<TypeAgenda, { nom: string; icone: LucideIcon; 
   sortie: { nom: 'Sortie', icone: Bus, couleur: '#0B9A8D', fond: '#DDF5F2' },
   evaluation: { nom: 'Évaluation', icone: ClipboardCheck, couleur: '#B37400', fond: '#FFF4DC' },
   reunion: { nom: 'Réunion', icone: Users, couleur: '#7B4DFF', fond: '#EEE8FF' },
-  info: { nom: 'Info', icone: Info, couleur: '#2E5BFF', fond: '#E6ECFF' },
+  info: { nom: 'Info', icone: Info, couleur: '#3358E0', fond: '#ECF0FF' },
   fete: { nom: 'Fête', icone: PartyPopper, couleur: '#DB2D84', fond: '#FCE4F0' },
   vacances: { nom: 'Vacances', icone: TreePalm, couleur: '#13A35B', fond: '#E1F6EA' },
 }
@@ -47,14 +47,12 @@ export function CarteEvenement({ e, onClick, attenue, masque }: { e: ElementAgen
   const plusieursJours = e.fin && e.fin !== e.date
   const Contenu = (
     <>
-      <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm" style={{ color: t.couleur }} title={t.nom}>
-        <Icone className="size-6" strokeWidth={2.2} />
-      </span>
+      <Icone className="mt-0.5 size-4 shrink-0 self-start" strokeWidth={2.2} style={{ color: t.couleur }} aria-label={t.nom} />
       <span className="min-w-0 flex-1">
-        <span className="line-clamp-2 font-bold leading-snug text-encre">{e.titre}</span>
+        <span className="line-clamp-2 font-semibold leading-snug text-encre">{e.titre}</span>
         {(e.heure || plusieursJours) && (
-          <span className="mt-0.5 block text-xs font-bold" style={{ color: t.couleur }}>
-            {[e.heure, plusieursJours ? `→ ${fmtJourCourt(e.fin!)}` : null].filter(Boolean).join(' · ')}
+          <span className="mt-0.5 block text-xs text-brume">
+            {[e.heure, plusieursJours ? `jusqu'au ${fmtJourCourt(e.fin!)}` : null].filter(Boolean).join(', ')}
           </span>
         )}
         {e.details && <span className="mt-1 line-clamp-2 block text-sm text-encre/75">{e.details}</span>}
@@ -62,8 +60,8 @@ export function CarteEvenement({ e, onClick, attenue, masque }: { e: ElementAgen
       {masque && <EyeOff className="size-4 shrink-0 text-brume" aria-label="Pas visible des familles" />}
     </>
   )
-  const cls = clsx('flex w-full items-center gap-3 rounded-[22px] p-2.5 text-left', attenue && 'opacity-60', masque && 'border-2 border-dashed border-trait')
-  const style = { background: masque ? '#fff' : t.fond }
+  const cls = clsx('flex w-full items-center gap-2.5 rounded-xl border-l-[3px] py-2.5 pl-3 pr-2.5 text-left', attenue && 'opacity-60', masque && 'border border-l-[3px] border-dashed border-trait')
+  const style = { background: masque ? '#fff' : t.fond, borderLeftColor: t.couleur }
   return onClick
     ? <button type="button" onClick={onClick} className={clsx(cls, 'transition hover:brightness-[0.98]')} style={style}>{Contenu}</button>
     : <div className={cls} style={style}>{Contenu}</div>

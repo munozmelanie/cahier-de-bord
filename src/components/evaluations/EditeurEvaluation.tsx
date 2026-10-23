@@ -119,11 +119,11 @@ export function EditeurEvaluation({ ouverte, evaluation, onFermer, onCree }: {
           </Champ>
         </div>
         <div className="flex flex-col gap-1.5">
-          <p className="text-sm font-bold">Matière</p>
+          <p className="text-sm font-semibold">Matière</p>
           <ChoixMatiere valeur={matiere} onChange={changerMatiere} />
         </div>
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-bold">Compétences</p>
+          <p className="text-sm font-semibold">Compétences</p>
           {items.map((it, i) => (
             <div key={it.id} className="grid grid-cols-[1fr_auto] gap-2 rounded-2xl bg-white p-2 sm:grid-cols-[1fr_15rem_auto]">
               <span className="flex items-center gap-2">

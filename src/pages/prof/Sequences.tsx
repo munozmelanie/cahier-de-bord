@@ -70,14 +70,14 @@ export default function Sequences() {
                 style={{ background: m.fond }}>
                 <div className="flex items-start justify-between gap-2">
                   <span className="flex size-11 items-center justify-center rounded-2xl bg-white shadow-sm" style={{ color: m.couleur }} title={m.nom}><I className="size-6" /></span>
-                  {s.periode && <span className="rounded-full bg-white/80 px-2 text-xs font-bold leading-6" style={{ color: m.couleur }}>{s.periode}</span>}
+                  {s.periode && <span className="rounded-full bg-white/80 px-2 text-xs font-semibold leading-6" style={{ color: m.couleur }}>{s.periode}</span>}
                 </div>
                 <span className="line-clamp-3 flex-1 font-titre text-lg font-semibold leading-snug text-encre">{s.titre || '—'}</span>
                 <span className="flex flex-wrap gap-1" aria-label={`${n} séances`}>
                   {Array.from({ length: Math.min(n, 10) }, (_, i) => (
-                    <span key={i} className="flex size-5 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: m.couleur }}>{i + 1}</span>
+                    <span key={i} className="flex size-5 items-center justify-center rounded-full text-[10px] font-semibold text-white" style={{ background: m.couleur }}>{i + 1}</span>
                   ))}
-                  {n > 10 && <span className="text-xs font-bold" style={{ color: m.couleur }}>+{n - 10}</span>}
+                  {n > 10 && <span className="text-xs font-semibold" style={{ color: m.couleur }}>+{n - 10}</span>}
                 </span>
               </button>
             )
@@ -167,7 +167,7 @@ function Editeur({ seq, onRetour }: { seq: Sequence; onRetour: () => void }) {
                 const actif = seq.periode === p.id
                 return (
                   <button key={p.id} type="button" role="radio" aria-checked={actif} onClick={() => maj({ periode: actif ? null : p.id })}
-                    className={clsx('h-7 rounded-full px-2.5 text-xs font-bold transition', actif ? 'text-white' : 'bg-white/70 text-brume')}
+                    className={clsx('h-7 rounded-full px-2.5 text-xs font-semibold transition', actif ? 'text-white' : 'bg-white/70 text-brume')}
                     style={actif ? { background: m.couleur } : undefined}>
                     {p.id}
                   </button>
@@ -190,7 +190,7 @@ function Editeur({ seq, onRetour }: { seq: Sequence; onRetour: () => void }) {
           ))}
           <li>
             <button type="button" onClick={ajouterEtape} aria-label="Ajouter une séance" title="Ajouter une séance"
-              className="flex h-full min-h-[4.25rem] w-full items-center justify-center rounded-[22px] border-2 border-dashed transition hover:bg-white"
+              className="flex h-full min-h-[4.25rem] w-full items-center justify-center rounded-3xl border-2 border-dashed transition hover:bg-white"
               style={{ borderColor: m.couleur, color: m.couleur }}>
               <Plus className="size-6" />
             </button>

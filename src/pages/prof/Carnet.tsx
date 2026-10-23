@@ -56,7 +56,7 @@ export default function CarnetProf() {
               className={clsx('relative inline-flex size-10 items-center justify-center rounded-full border transition',
                 filtre === 'alire' ? 'border-encre bg-encre text-white' : 'border-trait bg-white text-encre')}>
               <Inbox className="size-5" />
-              {aLire.length > 0 && <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-alerte px-1 text-center text-[11px] font-bold leading-5 text-white">{aLire.length}</span>}
+              {aLire.length > 0 && <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-alerte px-1 text-center text-[11px] font-semibold leading-5 text-white">{aLire.length}</span>}
             </button>
           )}
           <BoutonIcone icone={PenLine} label="Nouveau mot" variante="primaire" onClick={() => setNouveau(true)} />
@@ -86,7 +86,7 @@ export default function CarnetProf() {
             <VueFil fil={fil} classeId={classe.id} eleves={eleves.data ?? []} elevesParId={elevesParId}
               lectures={lectures.get(fil.racine.id) ?? []} parents={parents.data ?? []} onRetour={() => setOuvert(null)} />
           ) : (
-            <div className="hidden h-full min-h-[320px] items-center justify-center rounded-[28px] border-2 border-dashed border-trait lg:flex">
+            <div className="hidden h-full min-h-[320px] items-center justify-center rounded-3xl border-2 border-dashed border-trait lg:flex">
               <MessagesSquare className="size-10 text-trait" />
             </div>
           )}
@@ -156,11 +156,11 @@ function VueFil({ fil, classeId, eleves, elevesParId, lectures, parents, onRetou
       <div className="flex items-center gap-3">
         <BoutonIcone icone={ArrowLeft} label="Retour" onClick={onRetour} className="lg:hidden" />
         <Avatar eleve={eleve} classe={classeEntiere} />
-        <h2 className="min-w-0 flex-1 truncate font-titre text-2xl font-semibold text-encre">{classeEntiere ? titreFil(racine) : eleve?.prenom ?? 'Famille'}</h2>
+        <h2 className="min-w-0 flex-1 truncate text-xl font-bold text-encre">{classeEntiere ? titreFil(racine) : eleve?.prenom ?? 'Famille'}</h2>
         <BoutonIcone icone={Trash2} label="Supprimer le fil" onClick={supprimer} />
       </div>
 
-      <div className="flex flex-col gap-3 rounded-[28px] bg-[#EEF2FB] p-3 sm:p-4">
+      <div className="flex flex-col gap-3 rounded-3xl bg-encre/[.03] p-3 sm:p-4">
         <Bulle m={racine} moi={racine.auteur_role === 'enseignant'} />
         {racine.a_signer && <Signatures racine={racine} eleves={eleves} lectures={lectures} parents={parents} />}
 
@@ -169,7 +169,7 @@ function VueFil({ fil, classeId, eleves, elevesParId, lectures, parents, onRetou
             const e = elevesParId.get(eleveId)
             return (
               <div key={eleveId} className="flex flex-col gap-3 rounded-3xl p-3" style={{ background: fondTeinte(eleveId) }}>
-                <p className="flex items-center gap-2 font-bold text-encre">
+                <p className="flex items-center gap-2 font-semibold text-encre">
                   <span className="flex size-7 items-center justify-center rounded-lg bg-white font-titre text-sm" style={{ color: teinte(eleveId) }}>{e?.prenom.slice(0, 1) ?? '?'}</span>
                   {e?.prenom ?? '…'}
                 </p>

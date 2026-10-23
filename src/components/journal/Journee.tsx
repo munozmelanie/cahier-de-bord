@@ -27,7 +27,7 @@ export function OutilsJournee({ onNouvelle, onRemplir, onIa, remplissage }: { on
     <div className="flex items-center gap-2">
       <BoutonIcone icone={Sparkles} label="Remplir avec ChatGPT" variante="secondaire" onClick={onIa} />
       <BoutonIcone icone={CalendarPlus} label="Remplir depuis l'emploi du temps" variante="secondaire" onClick={onRemplir} disabled={remplissage} />
-      <BoutonIcone icone={Plus} label="Nouvelle séance" variante="primaire" onClick={onNouvelle} />
+      <Bouton icone={Plus} onClick={onNouvelle}>Séance</Bouton>
     </div>
   )
 }
@@ -88,18 +88,18 @@ export function Journee({ date, titre, sousTitre, actions, retour }: { date: str
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <section className="min-w-0">
           {/* Téléphone : les petites cartes résumées en une ligne, un tap y descend */}
-          <div className="mb-3 flex gap-2 lg:hidden">
+          <div className="-mx-1 mb-4 flex gap-2 overflow-x-auto px-1 lg:hidden">
             {[
               aLire > 0 && { id: 'carte-messages', i: MessagesSquare, c: '#E5484D', f: '#FDE7E8', n: aLire, l: 'Messages' },
-              { id: 'carte-preparer', i: Printer, c: '#2E5BFF', f: '#E6ECFF', n: aFaire.length, l: 'À préparer' },
+              { id: 'carte-preparer', i: Printer, c: '#3358E0', f: '#ECF0FF', n: aFaire.length, l: 'À préparer' },
               { id: 'carte-devoirs', i: BookCheck, c: '#13A35B', f: '#E1F6EA', n: devoirsDuJour.length, l: 'Devoirs' },
               { id: 'carte-resume', i: Send, c: '#7B4DFF', f: '#EEE8FF', n: '', l: 'Résumé' },
             ].filter(Boolean).map((x) => {
               const v = x as { id: string; i: typeof Printer; c: string; f: string; n: number | string; l: string }
               return (
-                <button key={v.id} type="button" aria-label={v.l} onClick={() => document.getElementById(v.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl py-2 font-titre text-lg font-semibold" style={{ background: v.f, color: v.c }}>
-                  <v.i className="size-5" />{v.n}
+                <button key={v.id} type="button" onClick={() => document.getElementById(v.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                  className="flex shrink-0 items-center gap-1.5 rounded-full border border-trait bg-white px-3 py-1.5 text-sm font-medium text-encre">
+                  <v.i className="size-4" style={{ color: v.c }} />{v.l}{!!v.n && <span className="text-brume">{v.n}</span>}
                 </button>
               )
             })}
@@ -126,13 +126,13 @@ export function Journee({ date, titre, sousTitre, actions, retour }: { date: str
             </Link>
           )}
 
-          <div id="carte-preparer" className="scroll-mt-4"><CarteInfo icone={Printer} couleur="#2E5BFF" fond="#E6ECFF" nombre={aFaire.length} titre="À préparer">
+          <div id="carte-preparer" className="scroll-mt-4"><CarteInfo icone={Printer} couleur="#3358E0" fond="#ECF0FF" nombre={aFaire.length} titre="À préparer">
             {aFaire.length > 0 && (
               <ul className="flex flex-col gap-2">
                 {aFaire.map((a, i) => {
                   const I = iconeAFaire(a.type)
                   return (
-                    <li key={i} className="flex items-center gap-2 text-sm font-bold">
+                    <li key={i} className="flex items-center gap-2 text-sm">
                       <I className="size-4 shrink-0 text-bateau" />
                       {a.lien ? <a href={a.lien} target="_blank" rel="noreferrer" className="underline">{a.label}</a> : <span>{a.label}</span>}
                     </li>

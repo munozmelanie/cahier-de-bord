@@ -1,15 +1,15 @@
+import clsx from 'clsx'
 import { AlertCircle, Check, Loader2 } from 'lucide-react'
 
-/** État de l'enregistrement automatique : une icône, le détail en infobulle */
+/** État de l'enregistrement automatique, discret */
 export function EtatEnregistrement({ etat }: { etat: 'ok' | 'attente' | 'envoi' | 'erreur' }) {
-  const [Icone, classe, texte] = etat === 'erreur'
-    ? [AlertCircle, 'bg-alerte-clair text-alerte', 'Non enregistré']
-    : etat === 'ok'
-      ? [Check, 'bg-succes-clair text-succes', 'Enregistré']
-      : [Loader2, 'bg-encre/5 text-brume', 'Enregistrement…']
+  const [Icone, texte] = etat === 'erreur'
+    ? [AlertCircle, 'Non enregistré']
+    : etat === 'ok' ? [Check, 'Enregistré'] : [Loader2, 'Enregistrement…']
   return (
-    <span className={`inline-flex size-9 items-center justify-center rounded-full ${classe}`} title={texte} role="status" aria-label={texte}>
-      <Icone className={`size-4 ${etat === 'attente' || etat === 'envoi' ? 'animate-spin' : ''}`} strokeWidth={2.6} />
+    <span role="status" className={clsx('inline-flex items-center gap-1.5 text-xs font-medium', etat === 'erreur' ? 'text-alerte' : 'text-brume')}>
+      <Icone className={clsx('size-3.5', (etat === 'attente' || etat === 'envoi') && 'animate-spin')} strokeWidth={2.6} />
+      {texte}
     </span>
   )
 }

@@ -1,42 +1,30 @@
 import clsx from 'clsx'
-import { CheckCircle2, GraduationCap, ListChecks, MessageSquareQuote, Printer, Send, Sparkles, User, Users } from 'lucide-react'
+import { CheckCircle2, ChevronLeft, ChevronRight, GraduationCap, Printer, Send, Sparkles, Users } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { AssistantIA, type DemandeIA } from '../../components/AssistantIA'
-import { CarteInfo } from '../../components/CarteInfo'
-import { CarteEleve } from '../../components/lsu/CarteEleve'
-import { ElementsClasse } from '../../components/lsu/ElementsClasse'
 import { FicheEleve } from '../../components/lsu/FicheEleve'
 import { imprimerLivrets } from '../../components/lsu/impression'
-import { bilanDuJour, bilansDe, NB_DOMAINES, propositions } from '../../components/lsu/outils'
-import { BoutonIcone, Chargement, Entete, NavPas, Onglets, Vide, useConfirmation, useToast } from '../../components/ui'
+import { bilanDuJour, bilansDe, lignesElements, NB_DOMAINES, propositions } from '../../components/lsu/outils'
+import { Programme } from '../../components/lsu/Programme'
+import { VueClasse } from '../../components/lsu/VueClasse'
+import { Bouton, BoutonIcone, Chargement, Entete, Liste, Onglets, OngletsLigne, Vide, useConfirmation, useToast } from '../../components/ui'
 import { aujourdhui } from '../../lib/dates'
 import { useEcrire, useEleves, useEvaluations, useLsu, useLsuClasse } from '../../lib/donnees'
+import { MODE_DEMO } from '../../lib/supabase'
 import { useClasse } from '../../lib/session'
+import type { Eleve, LsuBilan } from '../../lib/types'
 
-/** Bascule Classe / Élève en icônes */
-function ChoixVue({ vue, onChange }: { vue: 'classe' | 'eleve'; onChange: (v: 'classe' | 'eleve') => void }) {
-  const bouton = (v: 'classe' | 'eleve', Icone: typeof Users, label: string) => (
-    <button type="button" role="tab" aria-selected={vue === v} aria-label={label} title={label} onClick={() => onChange(v)}
-      className={clsx('flex h-8 w-10 items-center justify-center rounded-full transition', vue === v ? 'bg-white text-encre shadow-sm' : 'text-brume hover:text-encre')}>
-      <Icone className="size-4" />
-    </button>
-  )
-  return (
-    <div className="inline-flex gap-1 rounded-full bg-encre/5 p-1" role="tablist">
-      {bouton('classe', Users, 'Classe')}
-      {bouton('eleve', User, 'Élève')}
-    </div>
-  )
-}
+type Vue = 'eleve' | 'classe' | 'programme'
+
+const nbPositions = (l: LsuBilan | undefined) => Object.keys(l?.positions ?? {}).length
 
 export default function Lsu() {
   const classe = useClasse()
   const bilans = useMemo(() => bilansDe(classe.reglages), [classe.reglages])
   const [bilanId, setBilanId] = useState(() => bilanDuJour(bilans, aujourdhui())?.id ?? bilans[0]?.id)
   const bilan = bilans.find((b) => b.id === bilanId) ?? bilans[0]
-  const [vue, setVue] = useState<'classe' | 'eleve'>('classe')
+  const [vue, setVue] = useState<Vue>('eleve')
   const [index, setIndex] = useState(0)
-  const [elementsOuverts, setElementsOuverts] = useState(false)
   const [demandeIA, setDemandeIA] = useState<DemandeIA | null>(null)
 
   const eleves = useEleves()
@@ -55,7 +43,9 @@ export default function Lsu() {
   if (!bilan) return <Vide icone={GraduationCap} texte="Aucun bilan dans les réglages" />
   if (eleves.isLoading || lsu.isLoading) return <Chargement />
 
-  const eleve = actifs[Math.min(index, actifs.length - 1)]
+  const i = Math.min(index, Math.max(actifs.length - 1, 0))
+  const eleve = actifs[i]
+  const nbElements = Object.values(elements?.elements ?? {}).reduce((n, t) => n + lignesElements(t).length, 0)
 
   const publier = async (eleveId: string, publie: boolean) => {
     try {
@@ -63,7 +53,7 @@ export default function Lsu() {
         op: 'upsert', table: 'lsu_bilans', onConflict: 'eleve_id,bilan',
         ligne: { classe_id: classe.id, eleve_id: eleveId, bilan: bilan.id, publie, publie_le: publie ? new Date().toISOString() : null },
       })
-      toast(publie ? 'Livret publié aux familles' : 'Livret retiré')
+      toast(publie ? 'Livret publié' : 'Livret retiré')
     } catch (e) {
       toast((e as Error).message, 'erreur')
     }
@@ -83,81 +73,111 @@ export default function Lsu() {
       }
     })
   }
-  const imprimer = (lesquels: typeof actifs) => {
-    const ok = imprimerLivrets({ classe, bilan, eleves: lesquels, lignes: lsu.data ?? [], elements })
-    if (!ok) toast('Autorise les fenêtres pour imprimer', 'erreur')
+  const imprimer = (lesquels: Eleve[]) => {
+    if (!imprimerLivrets({ classe, bilan, eleves: lesquels, lignes: lsu.data ?? [], elements })) toast('Autorise les fenêtres pour imprimer', 'erreur')
   }
-
-  // Chiffres de la classe pour les petites cartes
-  const lignes = actifs.map((e) => parEleve.get(e.id))
-  const nbPublies = lignes.filter((l) => l?.publie).length
-  const nbPositions = lignes.reduce((n, l) => n + Object.keys(l?.positions ?? {}).length, 0)
-  const pctPositions = actifs.length ? Math.round((nbPositions / (actifs.length * NB_DOMAINES)) * 100) : 0
-  const nbGenerales = lignes.filter((l) => l?.appreciation_generale?.trim()).length
-  const publieEleve = !!(eleve && parEleve.get(eleve.id)?.publie)
+  const aller = (n: number) => setIndex((n + actifs.length) % actifs.length)
 
   return (
     <div>
       <Entete
         titre="Livret"
+        sousTitre={bilan.nom}
         actions={<>
-          <Onglets valeur={bilan.id} onChange={(v) => setBilanId(v)} options={bilans.map((b) => ({ id: b.id, label: b.id }))} />
-          <ChoixVue vue={vue} onChange={setVue} />
-          <BoutonIcone icone={ListChecks} label="Éléments du programme travaillés" variante="secondaire" onClick={() => setElementsOuverts(true)} />
-          <BoutonIcone icone={Sparkles} label="Appréciations avec ChatGPT" variante="secondaire"
+          {bilans.length > 1 && <Onglets valeur={bilan.id} onChange={(v) => setBilanId(v)} options={bilans.map((b) => ({ id: b.id, label: b.id }))} />}
+          <BoutonIcone icone={Sparkles} label="Rédiger les appréciations avec ChatGPT" variante="secondaire"
             onClick={() => setDemandeIA({ type: 'appreciations', bilan: bilan.id, eleveIds: vue === 'eleve' && eleve ? [eleve.id] : actifs.map((e) => e.id) })} />
-          {vue === 'classe' && <>
-            <BoutonIcone icone={Printer} label="Imprimer les livrets de la classe" variante="secondaire" onClick={() => imprimer(actifs)} />
-            <BoutonIcone icone={Send} label="Publier tous les livrets aux familles" variante="primaire" onClick={toutPublier} />
-          </>}
+          <BoutonIcone icone={Printer} label="Imprimer tous les livrets" variante="secondaire" onClick={() => imprimer(actifs)} />
+          <Bouton icone={Send} onClick={toutPublier}>Tout publier</Bouton>
         </>}
       />
 
+      <OngletsLigne<Vue> valeur={vue} onChange={setVue} options={[
+        { id: 'eleve', label: 'Par élève' },
+        { id: 'classe', label: 'Toute la classe' },
+        { id: 'programme', label: 'Programme travaillé', nombre: nbElements },
+      ]} />
+
       {actifs.length === 0 ? (
-        <Vide icone={Users} texte="Aucun élève" />
+        <Vide icone={Users} texte="Ajoute tes élèves pour remplir les livrets" />
+      ) : vue === 'eleve' && eleve ? (
+        <div className="grid items-start gap-6 lg:grid-cols-[12.5rem_1fr]">
+          <nav className={clsx('hidden max-h-[calc(100dvh-4rem)] flex-col gap-0.5 overflow-y-auto pb-4 lg:sticky lg:flex', MODE_DEMO ? 'top-12' : 'top-4')} aria-label="Élèves">
+            {actifs.map((e, j) => {
+              const l = parEleve.get(e.id)
+              const n = nbPositions(l)
+              return (
+                <button key={e.id} type="button" onClick={() => setIndex(j)} aria-current={j === i}
+                  className={clsx('flex items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm transition',
+                    j === i ? 'bg-white font-semibold text-encre shadow-doux' : 'font-medium text-encre/80 hover:bg-encre/[.04]')}>
+                  <span className="min-w-0 flex-1 truncate">{e.prenom}</span>
+                  {l?.publie
+                    ? <CheckCircle2 className="size-4 shrink-0 text-succes" aria-label="Publié" />
+                    : (
+                      <span className="h-1 w-8 shrink-0 overflow-hidden rounded-full bg-trait" title={`${n} sur ${NB_DOMAINES} positionnés`}>
+                        <span className="block h-full rounded-full bg-bateau" style={{ width: `${(n / NB_DOMAINES) * 100}%` }} />
+                      </span>
+                    )}
+                </button>
+              )
+            })}
+          </nav>
+
+          <FicheEleve
+            key={`${eleve.id}-${bilan.id}`}
+            classeId={classe.id}
+            eleve={eleve}
+            bilan={bilan.id}
+            ligne={parEleve.get(eleve.id)}
+            proposees={props[eleve.id] ?? {}}
+            entete={<EnteteEleve eleve={eleve} eleves={actifs} index={i} ligne={parEleve.get(eleve.id)} aller={aller}
+              onPublier={(v) => publier(eleve.id, v)} onImprimer={() => imprimer([eleve])} />}
+          />
+        </div>
       ) : vue === 'classe' ? (
-        <>
-          <div className="mb-5 grid grid-cols-3 gap-3 lg:max-w-2xl">
-            <CarteInfo icone={GraduationCap} couleur="#2E5BFF" fond="#E6ECFF" nombre={`${pctPositions}%`} titre="Positionnements remplis" />
-            <CarteInfo icone={MessageSquareQuote} couleur="#7B4DFF" fond="#EEE8FF" nombre={nbGenerales} titre="Appréciations générales rédigées" />
-            <CarteInfo icone={CheckCircle2} couleur="#18A058" fond="#E3F6EC" nombre={nbPublies} titre="Livrets publiés aux familles" />
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {actifs.map((e, i) => (
-              <CarteEleve key={e.id} eleve={e} ligne={parEleve.get(e.id)} proposees={props[e.id] ?? {}}
-                onOuvrir={() => { setIndex(i); setVue('eleve') }} onPublier={(v) => publier(e.id, v)} />
-            ))}
-          </div>
-        </>
-      ) : eleve ? (
-        <FicheEleve
-          key={`${eleve.id}-${bilan.id}`}
-          classeId={classe.id}
-          eleve={eleve}
-          bilan={bilan.id}
-          ligne={parEleve.get(eleve.id)}
-          proposees={props[eleve.id] ?? {}}
-          entete={
-            <div className="flex flex-wrap items-center gap-2">
-              <NavPas
-                label={<span className="font-titre text-lg">{eleve.prenom}</span>}
-                precedent={() => setIndex((i) => (i - 1 + actifs.length) % actifs.length)}
-                suivant={() => setIndex((i) => (i + 1) % actifs.length)}
-              />
-              <button type="button" onClick={() => publier(eleve.id, !publieEleve)} aria-pressed={publieEleve}
-                aria-label={publieEleve ? 'Retirer le livret' : 'Publier aux familles'} title={publieEleve ? 'Visible des familles (toucher pour retirer)' : 'Publier aux familles'}
-                className={clsx('flex size-10 items-center justify-center rounded-full transition', publieEleve ? 'bg-succes text-white' : 'border border-trait bg-white text-brume hover:text-bateau')}>
-                {publieEleve ? <CheckCircle2 className="size-5" /> : <Send className="size-5" />}
-              </button>
-              <BoutonIcone icone={Printer} label="Imprimer ce livret" variante="secondaire" onClick={() => imprimer([eleve])} />
-            </div>
-          }
-        />
+        <VueClasse classeId={classe.id} bilan={bilan.id} eleves={actifs} parEleve={parEleve} props={props}
+          onOuvrir={(j) => { setIndex(j); setVue('eleve') }} />
+      ) : vue === 'programme' ? (
+        lsuClasse.isLoading ? <Chargement /> : <Programme key={bilan.id} classeId={classe.id} bilan={bilan.id} actuel={elements} />
       ) : null}
 
-      <ElementsClasse ouverte={elementsOuverts} onFermer={() => setElementsOuverts(false)} classeId={classe.id} bilan={bilan.id} actuel={elements} />
       <AssistantIA demande={demandeIA} onFermer={() => setDemandeIA(null)} />
       {fenetre}
+    </div>
+  )
+}
+
+/** Nom de l'élève, changement d'élève, état de publication */
+function EnteteEleve({ eleve, eleves, index, ligne, aller, onPublier, onImprimer }: {
+  eleve: Eleve; eleves: Eleve[]; index: number; ligne: LsuBilan | undefined
+  aller: (i: number) => void; onPublier: (v: boolean) => void; onImprimer: () => void
+}) {
+  const n = nbPositions(ligne)
+  return (
+    <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
+      <div className="flex items-center gap-1">
+        <BoutonIcone icone={ChevronLeft} label="Élève précédent" onClick={() => aller(index - 1)} variante="secondaire" />
+        <BoutonIcone icone={ChevronRight} label="Élève suivant" onClick={() => aller(index + 1)} variante="secondaire" />
+      </div>
+      <div className="min-w-0">
+        <Liste value={eleve.id} onChange={(e) => aller(eleves.findIndex((x) => x.id === e.target.value))} aria-label="Élève"
+          className="w-auto border-transparent bg-transparent py-0 pl-0 text-xl font-bold focus:ring-0 lg:hidden">
+          {eleves.map((e) => <option key={e.id} value={e.id}>{e.prenom}</option>)}
+        </Liste>
+        <h2 className="hidden truncate text-xl font-bold text-encre lg:block">{eleve.prenom} {eleve.nom ?? ''}</h2>
+        <p className="text-xs text-brume">{n} sur {NB_DOMAINES} positionnés</p>
+      </div>
+      <div className="flex items-center gap-1.5">
+        {ligne?.publie ? (
+          <button type="button" onClick={() => onPublier(false)} title="Visible par la famille. Cliquer pour retirer."
+            className="inline-flex h-8 items-center gap-1.5 rounded-full bg-succes-clair px-3 text-sm font-semibold text-succes">
+            <CheckCircle2 className="size-4" /> Publié
+          </button>
+        ) : (
+          <Bouton variante="secondaire" taille="s" icone={Send} onClick={() => onPublier(true)}>Publier</Bouton>
+        )}
+        <BoutonIcone icone={Printer} label={`Imprimer le livret de ${eleve.prenom}`} onClick={onImprimer} />
+      </div>
     </div>
   )
 }

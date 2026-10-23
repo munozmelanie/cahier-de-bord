@@ -6,7 +6,7 @@ import type { Reglages, TypeDevoir } from '../../lib/types'
 import { Saisie } from '../ui'
 
 export const TYPES_DEVOIR: { id: TypeDevoir; label: string; icone: LucideIcon; couleur: string; fond: string }[] = [
-  { id: 'travail', label: 'À faire', icone: PencilLine, couleur: '#2E5BFF', fond: '#E6ECFF' },
+  { id: 'travail', label: 'À faire', icone: PencilLine, couleur: '#3358E0', fond: '#ECF0FF' },
   { id: 'lecon', label: 'Leçon', icone: BookMarked, couleur: '#13A35B', fond: '#E1F6EA' },
   { id: 'evaluation', label: 'Évaluation', icone: ClipboardList, couleur: '#E5484D', fond: '#FDE7E8' },
   { id: 'materiel', label: 'Matériel', icone: Package, couleur: '#B37400', fond: '#FFF4DC' },
@@ -18,7 +18,7 @@ export function BadgeType({ type }: { type: TypeDevoir }) {
   const t = typeDevoir(type)
   const Icone = t.icone
   return (
-    <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold" style={{ background: t.fond, color: t.couleur }}>
+    <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold" style={{ background: t.fond, color: t.couleur }}>
       <Icone className="size-3.5" /> {t.label}
     </span>
   )
@@ -32,7 +32,7 @@ export function ChoixType({ valeur, onChange }: { valeur: TypeDevoir; onChange: 
         const choisi = t.id === valeur
         return (
           <button key={t.id} type="button" role="radio" aria-checked={choisi} onClick={() => onChange(t.id)}
-            className={clsx('inline-flex items-center gap-1.5 rounded-full border-2 px-3 py-1.5 text-sm font-bold transition', choisi ? 'border-current' : 'border-transparent')}
+            className={clsx('inline-flex items-center gap-1.5 rounded-full border-2 px-3 py-1.5 text-sm font-semibold transition', choisi ? 'border-current' : 'border-transparent')}
             style={{ background: t.fond, color: t.couleur }}>
             <Icone className="size-4" /> {t.label}
           </button>
@@ -47,7 +47,7 @@ export function ChoixPourLe({ donneLe, valeur, onChange, reglages }: { donneLe: 
   const demain = jourClasseSuivant(donneLe, reglages)
   const semPro = semaineSuivante(donneLe, reglages)
   const [libre, setLibre] = useState(valeur !== demain && valeur !== semPro)
-  const puce = (actif: boolean) => clsx('rounded-full px-3 py-1.5 text-sm font-bold transition', actif ? 'bg-encre text-white' : 'bg-white text-encre border border-trait')
+  const puce = (actif: boolean) => clsx('rounded-full px-3 py-1.5 text-sm font-semibold transition', actif ? 'bg-encre text-white' : 'bg-white text-encre border border-trait')
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       <button type="button" className={puce(!libre && valeur === demain)} onClick={() => { setLibre(false); onChange(demain) }}>

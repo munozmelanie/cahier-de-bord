@@ -5,39 +5,39 @@ import { matiere } from '../../lib/matieres'
 import type { Devoir } from '../../lib/types'
 import { typeDevoir } from './devoirsOutils'
 
-/** Un devoir en carte colorée (couleur de la matière) */
+/** Un devoir : liseré de la couleur de la matière, texte, date discrète */
 export function CarteDevoir({ d, montrer = 'rien', onClick, statut, fait, onFait }: {
   d: Devoir; montrer?: 'pour' | 'donne' | 'rien'; onClick?: () => void; statut?: boolean; fait?: boolean; onFait?: () => void
 }) {
   const m = matiere(d.matiere)
   const Icone = m.icone
   const t = typeDevoir(d.type)
-  const TypeIcone = t.icone
   const evaluation = d.type === 'evaluation'
   const Corps = onClick ? 'button' : 'div'
   return (
-    <div className={clsx('flex items-center gap-2.5 rounded-2xl p-2', evaluation && 'ring-2 ring-alerte', fait && 'opacity-50')} style={{ background: m.fond }}>
-      <Corps type={onClick ? 'button' : undefined} onClick={onClick} className="flex min-w-0 flex-1 items-center gap-2.5 text-left">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm" style={{ color: m.couleur }} title={m.nom}>
-          <Icone className="size-5" strokeWidth={2.2} />
-        </span>
+    <div className={clsx('flex items-center gap-2 rounded-xl border-l-[3px] py-2 pl-2.5 pr-2', fait && 'opacity-50')}
+      style={{ background: m.fond, borderLeftColor: m.couleur }}>
+      <Corps type={onClick ? 'button' : undefined} onClick={onClick} className="flex min-w-0 flex-1 items-start gap-2 text-left">
+        <Icone className="mt-0.5 size-4 shrink-0" strokeWidth={2.2} style={{ color: m.couleur }} aria-label={m.nom} />
         <span className="min-w-0 flex-1">
-          <span className={clsx('line-clamp-3 text-sm font-bold leading-snug', evaluation ? 'text-alerte' : 'text-encre', fait && 'line-through')}>{d.texte}</span>
-          {montrer !== 'rien' && (
-            <span className="mt-0.5 block text-[11px] font-bold" style={{ color: m.couleur }}>
-              {montrer === 'pour' ? `→ ${fmtJourCourt(d.pour_le)}` : `${fmtJourCourt(d.donne_le)} →`}
+          <span className={clsx('line-clamp-3 text-sm font-medium leading-snug text-encre', fait && 'line-through')}>{d.texte}</span>
+          {(montrer !== 'rien' || evaluation || d.type !== 'travail') && (
+            <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-brume">
+              {evaluation && <span className="font-semibold text-alerte">Évaluation</span>}
+              {!evaluation && d.type !== 'travail' && <span>{t.label}</span>}
+              {montrer === 'pour' && <span>pour {fmtJourCourt(d.pour_le)}</span>}
+              {montrer === 'donne' && <span>donné {fmtJourCourt(d.donne_le)}</span>}
             </span>
           )}
         </span>
-        {d.type !== 'travail' && <TypeIcone className="size-4 shrink-0" style={{ color: t.couleur }} aria-label={t.label} />}
         {statut && (d.publie
-          ? <Eye className="size-4 shrink-0 text-succes" aria-label="Visible des familles" />
-          : <Clock className="size-4 shrink-0 text-ambre-fonce" aria-label="Publié en fin de journée" />)}
+          ? <Eye className="mt-0.5 size-4 shrink-0 text-succes" aria-label="Visible des familles" />
+          : <Clock className="mt-0.5 size-4 shrink-0 text-brume" aria-label="Publié en fin de journée" />)}
       </Corps>
       {onFait && (
         <button type="button" onClick={onFait} aria-pressed={fait} aria-label={fait ? 'Pas fait' : 'Fait'}
-          className={clsx('flex size-8 shrink-0 items-center justify-center rounded-full transition', fait ? 'bg-succes text-white' : 'bg-white text-trait hover:text-succes')}>
-          <Check className="size-5" strokeWidth={3} />
+          className={clsx('flex size-7 shrink-0 items-center justify-center rounded-full transition', fait ? 'bg-succes text-white' : 'border-2 border-encre/15 bg-white/70 text-transparent hover:border-succes hover:text-succes')}>
+          <Check className="size-3.5" strokeWidth={3} />
         </button>
       )}
     </div>

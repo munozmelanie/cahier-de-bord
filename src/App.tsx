@@ -1,4 +1,4 @@
-import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { Chargement, ToastProvider } from './components/ui'
 import { SessionProvider, useSession } from './lib/session'
 import { ProfShell } from './layouts/ProfShell'
@@ -23,9 +23,19 @@ import DevoirsParent from './pages/parent/Devoirs'
 import CarnetParent from './pages/parent/Carnet'
 import AgendaParent from './pages/parent/Agenda'
 import Livret from './pages/parent/Livret'
+import Remplacant from './pages/Remplacant'
 
 function Routeur() {
   const { pret, userId, role } = useSession()
+  const loc = useLocation()
+  // Lien du QR code remplaçant : ouvert à tous, sans compte
+  if (loc.pathname.startsWith('/r/')) {
+    return (
+      <Routes>
+        <Route path="/r/:jeton" element={<Remplacant />} />
+      </Routes>
+    )
+  }
   if (!pret) return <div className="min-h-dvh"><Chargement /></div>
 
   if (!userId) {

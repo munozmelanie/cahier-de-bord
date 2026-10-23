@@ -26,15 +26,15 @@ export function imprimerCodes(eleves: Eleve[], classe: Classe) {
 <style>
   @page { size: A4; margin: 10mm; }
   * { box-sizing: border-box; }
-  body { margin: 0; font-family: "Atkinson Hyperlegible", Arial, sans-serif; color: #1E2A47; }
+  body { margin: 0; font-family: Figtree, Arial, sans-serif; color: #1E2A47; }
   .page { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, 69mm); break-after: page; }
   .page:last-child { break-after: auto; }
   .coupon { border: 1px dashed #A3ACC2; padding: 6mm 7mm; display: flex; flex-direction: column; gap: 2mm; break-inside: avoid; }
   .haut { display: flex; align-items: center; gap: 3mm; font-size: 11pt; line-height: 1.2; }
   .haut small { color: #6A7593; font-size: 8.5pt; }
-  .logo { display: inline-flex; width: 9mm; height: 9mm; border-radius: 3mm; background: #2E5BFF; align-items: center; justify-content: center; }
+  .logo { display: inline-flex; width: 9mm; height: 9mm; border-radius: 3mm; background: #3358E0; align-items: center; justify-content: center; }
   .prenom { margin: 1mm 0 0; font-size: 18pt; font-weight: 700; }
-  .code { margin: 0; font-size: 22pt; font-weight: 700; letter-spacing: 2pt; color: #2E5BFF; font-family: "Courier New", monospace; }
+  .code { margin: 0; font-size: 22pt; font-weight: 700; letter-spacing: 2pt; color: #3358E0; font-family: "Courier New", monospace; }
   ol { margin: 0; padding-left: 5mm; font-size: 9.5pt; line-height: 1.45; }
   @media screen { body { background: #F5F7FC; } .page { width: 190mm; margin: 10mm auto; background: #fff; } }
 </style></head><body>${pages.join('')}

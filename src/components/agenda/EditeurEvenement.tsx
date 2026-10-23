@@ -66,7 +66,7 @@ export function EditeurEvenement({ ouvert, onFermer, classeId, ev, dateInitiale 
               const Icone = c.icone
               return (
                 <button key={t} type="button" role="radio" aria-checked={type === t} onClick={() => setType(t)}
-                  className={clsx('flex flex-col items-center gap-1 rounded-2xl border-2 p-2 text-[11px] font-bold', type === t ? 'border-current' : 'border-transparent')}
+                  className={clsx('flex flex-col items-center gap-1 rounded-2xl border-2 p-2 text-[11px] font-semibold', type === t ? 'border-current' : 'border-transparent')}
                   style={{ background: c.fond, color: c.couleur }}>
                   <Icone className="size-5" strokeWidth={2.2} />{c.nom}
                 </button>

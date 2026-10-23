@@ -32,7 +32,7 @@ function Etapes({ actuelle, faites, onChoisir }: { actuelle: number; faites: boo
   )
 }
 
-const LIEN = 'flex flex-col items-center gap-1.5 rounded-3xl bg-white p-3 text-sm font-bold text-encre shadow-sm transition hover:-translate-y-0.5'
+const LIEN = 'flex flex-col items-center gap-1.5 rounded-3xl bg-white p-3 text-sm font-semibold text-encre shadow-sm transition hover:-translate-y-0.5'
 
 export function Coquille<T>({ titre, pret, construire, options, analyser, apercu, importer, onFermer }: {
   titre: ReactNode
@@ -109,7 +109,7 @@ export function Coquille<T>({ titre, pret, construire, options, analyser, apercu
               <Texte value={precisions} onChange={(e) => setPrecisions(e.target.value)} placeholder="Précisions (facultatif)" aria-label="Précisions" />
               <div className="flex items-center gap-2">
                 <BoutonIcone icone={Eye} label={voir ? 'Masquer la demande' : 'Voir la demande'} actif={voir} onClick={() => setVoir((v) => !v)} />
-                <span className="text-xs font-bold text-brume">{Math.round(prompt.length / 100) / 10} k</span>
+                <span className="text-xs font-semibold text-brume">{Math.round(prompt.length / 100) / 10} k</span>
               </div>
               {voir && (
                 <textarea ref={zone} readOnly value={prompt} aria-label="Demande à copier"

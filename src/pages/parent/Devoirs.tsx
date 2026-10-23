@@ -27,19 +27,21 @@ export default function DevoirsParent() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-center">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold text-encre">Devoirs</h1>
         <NavPas label={format(parseISO(lundi), 'd MMM', { locale: fr })} precedent={() => setLundi(decaler(lundi, -7))} suivant={() => setLundi(decaler(lundi, 7))} auMilieu={() => setLundi(lundiCourant())} />
       </div>
       {devoirs.isLoading ? <Chargement /> : (
         <CalendrierSemaine
           jours={jours}
           reglages={classe?.reglages}
+          liste
           compte={(j) => (parJour.get(j) ?? []).filter((d) => !faits.includes(d.id)).length}
           rendu={(j) => {
             const l = parJour.get(j) ?? []
             return l.length
               ? l.map((d) => <CarteDevoir key={d.id} d={d} fait={faits.includes(d.id)} onFait={() => basculer(d.id)} />)
-              : <p className="py-6 text-center text-2xl text-trait">—</p>
+              : <p className="text-sm text-brume">Rien à faire</p>
           }}
         />
       )}

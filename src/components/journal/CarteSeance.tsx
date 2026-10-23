@@ -18,7 +18,7 @@ export function CarteSeance({ s, enCours, onOuvrir, onStatut, compacte }: {
 
   return (
     <div
-      className={clsx('group relative flex items-center gap-3 rounded-[22px] px-3 transition md:min-h-[var(--h)]', enCours && 'ring-[3px] ring-encre ring-offset-2 ring-offset-papier', compacte ? 'py-2' : 'py-2.5')}
+      className={clsx('group relative flex items-center gap-3 rounded-3xl px-3 transition md:min-h-[var(--h)]', enCours && 'ring-[3px] ring-encre ring-offset-2 ring-offset-papier', compacte ? 'py-2' : 'py-2.5')}
       style={{
         ['--h' as any]: hauteur ? `${hauteur}px` : undefined,
         background: nonFaite ? `repeating-linear-gradient(45deg, #fff, #fff 8px, ${m.fond} 8px, ${m.fond} 16px)` : m.fond,
@@ -30,8 +30,8 @@ export function CarteSeance({ s, enCours, onOuvrir, onStatut, compacte }: {
           <Icone className={compacte ? 'size-5' : 'size-6'} strokeWidth={2.2} />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-xs font-bold tabular-nums" style={{ color: m.couleur }}>{fmtHeure(s.debut)}</span>
-          <span className={clsx('line-clamp-2 font-bold leading-snug text-encre', nonFaite && 'line-through opacity-60')}>{s.titre || m.court}</span>
+          <span className="block text-xs font-semibold tabular-nums" style={{ color: m.couleur }}>{fmtHeure(s.debut)}</span>
+          <span className={clsx('line-clamp-2 font-semibold leading-snug text-encre', nonFaite && 'line-through opacity-60')}>{s.titre || m.court}</span>
         </span>
         {s.a_faire?.length > 0 && !compacte && (
           <span className="flex shrink-0 gap-1" style={{ color: m.couleur }} title={s.a_faire.map((a) => a.label).join(' · ')}>

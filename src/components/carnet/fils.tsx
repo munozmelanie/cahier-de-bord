@@ -29,7 +29,7 @@ export function construireFils(messages: Message[]): Fil[] {
 export const titreFil = (m: Message) => m.titre?.trim() || m.texte.split('\n')[0].slice(0, 60)
 
 /** Couleur stable par élève, pour les pastilles */
-const TEINTES = ['#2E5BFF', '#E0457B', '#13A35B', '#F2711C', '#7B4DFF', '#0B9A8D', '#C135D8', '#B9770E', '#E5484D', '#0A8FD6']
+const TEINTES = ['#3358E0', '#E0457B', '#13A35B', '#F2711C', '#7B4DFF', '#0B9A8D', '#C135D8', '#B9770E', '#E5484D', '#0A8FD6']
 export function teinte(id: string | null | undefined) {
   if (!id) return TEINTES[0]
   let h = 0
@@ -40,49 +40,47 @@ export function teinte(id: string | null | undefined) {
 /** Fond pastel tiré de la teinte de l'élève */
 export const fondTeinte = (id: string | null | undefined) => teinte(id) + '1F'
 
-export function Avatar({ eleve, classe, blanc }: { eleve?: Eleve | null; classe?: boolean; blanc?: boolean }) {
+export function Avatar({ eleve, classe }: { eleve?: Eleve | null; classe?: boolean; blanc?: boolean }) {
   if (classe || !eleve) {
     return (
-      <span className={clsx('flex size-11 shrink-0 items-center justify-center rounded-2xl text-ambre-fonce', blanc ? 'bg-white shadow-sm' : 'bg-ambre-clair')} aria-hidden>
-        <Megaphone className="size-5" strokeWidth={2.2} />
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-ambre-clair text-ambre-fonce" aria-hidden>
+        <Megaphone className="size-4" strokeWidth={2.2} />
       </span>
     )
   }
   const c = teinte(eleve.id)
   return (
-    <span className={clsx('flex size-11 shrink-0 items-center justify-center rounded-2xl font-titre text-lg font-semibold', blanc ? 'bg-white shadow-sm' : 'text-white')}
-      style={blanc ? { color: c } : { background: c }} aria-hidden>
+    <span className="flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold" style={{ background: fondTeinte(eleve.id), color: c }} aria-hidden>
       {eleve.prenom.slice(0, 1)}
     </span>
   )
 }
 
-/** Un fil en carte pastel : bulle, titre, une ligne d'aperçu, pastilles en icônes */
+/** Un fil : avatar, titre, une ligne d'aperçu ; non lu = point bleu et texte appuyé */
 export function CarteFil({ titre, apercu, eleve, classe, date, actif, nonLus, signature, onClick }: {
   titre: string; apercu: string; eleve?: Eleve | null; classe?: boolean; date: string; actif?: boolean; nonLus?: number
   signature?: { etat: 'attente' | 'signe'; texte?: string } | null; onClick: () => void
 }) {
-  const fond = classe || !eleve ? '#FFF4DC' : fondTeinte(eleve.id)
   return (
     <button type="button" onClick={onClick}
-      className={clsx('flex w-full items-center gap-3 rounded-[22px] p-2.5 text-left transition hover:brightness-[0.98]', actif && 'ring-[3px] ring-encre ring-offset-2 ring-offset-papier')}
-      style={{ background: fond }}>
-      <Avatar eleve={eleve} classe={classe} blanc />
+      className={clsx('flex w-full items-center gap-3 rounded-2xl bg-white p-3 text-left shadow-doux transition hover:bg-[#FAFBFC]', actif && 'ring-2 ring-bateau')}>
+      <Avatar eleve={eleve} classe={classe} />
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
-          <span className="truncate font-bold text-encre">{titre}</span>
-          <span className="ml-auto shrink-0 text-[11px] font-bold text-brume">{date}</span>
+          {!!nonLus && <span className="size-2 shrink-0 rounded-full bg-bateau" aria-label={`${nonLus} non lu`} />}
+          <span className={clsx('truncate text-[15px] text-encre', nonLus ? 'font-bold' : 'font-semibold')}>{titre}</span>
+          <span className="ml-auto shrink-0 text-xs text-brume">{date}</span>
         </span>
-        <span className={clsx('block truncate text-sm', nonLus ? 'font-bold text-encre' : 'text-encre/60')}>{apercu}</span>
+        <span className="mt-0.5 flex items-center gap-2">
+          <span className={clsx('min-w-0 flex-1 truncate text-sm', nonLus ? 'text-encre' : 'text-brume')}>{apercu}</span>
+          {signature && (
+            <span className={clsx('inline-flex shrink-0 items-center gap-1 text-xs font-semibold', signature.etat === 'signe' ? 'text-succes' : 'text-ambre-fonce')}>
+              {signature.etat === 'signe' ? <Check className="size-3.5" strokeWidth={3} /> : <Signature className="size-3.5" />}
+              {signature.texte ?? (signature.etat === 'signe' ? 'Signé' : 'À signer')}
+            </span>
+          )}
+        </span>
       </span>
-      {signature && (
-        <span className={clsx('flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-xs font-bold', signature.etat === 'signe' ? 'bg-succes text-white' : 'bg-white text-ambre-fonce')}
-          title={signature.etat === 'signe' ? 'Signé' : 'À signer'}>
-          {signature.etat === 'signe' ? <Check className="size-3.5" strokeWidth={3} /> : <Signature className="size-3.5" />}
-          {signature.texte}
-        </span>
-      )}
-      {!!nonLus && <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-alerte text-xs font-bold text-white" aria-label={`${nonLus} non lu`}>{nonLus}</span>}
     </button>
   )
 }
@@ -90,11 +88,11 @@ export function CarteFil({ titre, apercu, eleve, classe, date, actif, nonLus, si
 export function Bulle({ m, moi }: { m: Message; moi: boolean }) {
   return (
     <div className={clsx('flex flex-col gap-1', moi ? 'items-end' : 'items-start')}>
-      <div className={clsx('max-w-[85%] rounded-3xl px-4 py-3', moi ? 'rounded-br-lg bg-bateau text-white' : 'rounded-bl-lg bg-white text-encre shadow-doux')}>
-        {m.titre && !m.racine_id && <p className={clsx('mb-1 font-titre text-lg font-semibold leading-snug', moi ? 'text-white' : 'text-encre')}>{m.titre}</p>}
+      <div className={clsx('max-w-[85%] rounded-2xl px-4 py-3', moi ? 'rounded-br-md bg-bateau text-white' : 'rounded-bl-md bg-white text-encre shadow-doux')}>
+        {m.titre && !m.racine_id && <p className={clsx('mb-1 font-semibold leading-snug', moi ? 'text-white' : 'text-encre')}>{m.titre}</p>}
         <p className="whitespace-pre-wrap break-words leading-relaxed">{m.texte}</p>
       </div>
-      <p className="px-2 text-[11px] text-brume">{m.auteur_nom ?? ''} · {fmtDateHeure(m.created_at)}</p>
+      <p className="px-2 text-[11px] text-brume">{[m.auteur_nom, fmtDateHeure(m.created_at)].filter(Boolean).join(', ')}</p>
     </div>
   )
 }
@@ -109,7 +107,7 @@ export function ZoneReponse({ onEnvoyer, placeholder = 'Répondre…', enCours }
     setTexte('')
   }
   return (
-    <form onSubmit={envoyer} className="flex items-end gap-2 rounded-3xl border border-trait bg-white p-1.5 pl-4 focus-within:border-bateau">
+    <form onSubmit={envoyer} className="flex items-end gap-2 rounded-2xl border border-trait bg-white p-1.5 pl-4 focus-within:border-bateau">
       <textarea
         value={texte}
         onChange={(e) => setTexte(e.target.value)}

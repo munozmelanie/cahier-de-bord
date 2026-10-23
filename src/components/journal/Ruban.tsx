@@ -44,7 +44,7 @@ export function Ruban({ seances, maintenant, onChoisir }: { seances: Seance[]; m
           </div>
         )}
       </div>
-      <div className="relative mt-1 h-4 text-[11px] font-bold text-brume">
+      <div className="relative mt-1 h-4 text-[11px] font-semibold text-brume">
         {heures.map((h) => (
           <span key={h} className="absolute -translate-x-1/2" style={{ left: pos(h) }}>{h / 60}h</span>
         ))}

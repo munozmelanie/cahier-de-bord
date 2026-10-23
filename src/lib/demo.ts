@@ -1,6 +1,7 @@
 // Mode démo : une fausse base en mémoire qui imite le petit morceau de supabase-js utilisé par l'appli.
 // Sert à essayer l'appli sans compte et à la tester. Données fictives (aucun vrai élève).
 import { demoDonnees, DEMO_IDS } from './demoDonnees'
+import { aujourdhui, decaler } from './dates'
 
 type Row = Record<string, any>
 type Resultat = { data: any; error: { message: string } | null; count?: number | null }
@@ -239,6 +240,14 @@ export function creerClientDemo() {
         return { data: e?.code_famille ?? null, error: null }
       }
       if (nom === 'publier_journee') return { data: publierDemo(s, args.p_classe, args.p_date), error: null }
+      if (nom === 'jeton_remplacant') return { data: jetonDemo(s).jeton, error: null }
+      if (nom === 'nouveau_jeton_remplacant') {
+        const j = jetonDemo(s)
+        j.jeton = args.actif === false ? null : Array.from({ length: 28 }, () => 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 31)]).join('')
+        s.sauver()
+        return { data: j.jeton, error: null }
+      }
+      if (nom === 'journal_remplacant') return { data: journalRemplacantDemo(s, args.p_jeton, args.p_date), error: null }
       return { data: null, error: { message: `Fonction inconnue : ${nom}` } }
     },
     auth: {
@@ -261,6 +270,38 @@ export function creerClientDemo() {
       // propre au mode démo
       entrerComme: (p: Persona) => changer(p),
     },
+  }
+}
+
+/** Lien remplaçant de la démo (un lien prêt à l'emploi au départ) */
+function jetonDemo(s: Store) {
+  const t = s.table('secrets_demo')
+  if (!t.length) t.push({ jeton: 'DEMOREMPLACANT2026CAHIERBORD' })
+  return t[0] as { jeton: string | null }
+}
+
+/** Même réponse que la fonction journal_remplacant de la base */
+function journalRemplacantDemo(s: Store, jeton: string, date: string) {
+  if (!jeton || jeton !== jetonDemo(s).jeton) return { erreur: 'lien' }
+  const c = s.table('classes')[0] ?? {}
+  const r = c.reglages ?? {}
+  const min = decaler(aujourdhui(), -7)
+  const max = decaler(aujourdhui(), 14)
+  if (!date || date < min || date > max) return { erreur: 'date', min, max }
+  const per = (r.periodes ?? []).find((p: any) => p.debut <= date && date <= p.fin)?.id
+  const jour = ((new Date(date + 'T12:00:00').getDay() + 6) % 7) + 1
+  const hh = (t: any) => (t ? String(t).slice(0, 5) : t)
+  return {
+    classe: { nom: c.nom, ecole: c.ecole, enseignant_nom: c.enseignant_nom },
+    reglages: { jours: r.jours, periodes: r.periodes, vacances: r.vacances, feries: r.feries },
+    mot: (r.mot_remplacant ?? '').trim() || null,
+    min, max,
+    seances: s.table('seances').filter((x) => x.classe_id === c.id && x.date === date)
+      .map((x) => ({ id: x.id, date: x.date, debut: hh(x.debut), fin: hh(x.fin), matiere: x.matiere, titre: x.titre, objectif: x.objectif, deroule: x.deroule, materiel: x.materiel, a_faire: x.a_faire ?? [], statut: x.statut })),
+    devoirs: s.table('devoirs').filter((d) => d.classe_id === c.id && d.donne_le === date)
+      .map((d) => ({ id: d.id, donne_le: d.donne_le, pour_le: d.pour_le, matiere: d.matiere, texte: d.texte, type: d.type })),
+    pauses: s.table('edt_creneaux').filter((e) => e.classe_id === c.id && e.type === 'pause' && e.periode === per && e.jour === jour)
+      .map((e) => ({ id: e.id, jour: e.jour, debut: hh(e.debut), fin: hh(e.fin), libelle: e.libelle, type: e.type })),
   }
 }
 

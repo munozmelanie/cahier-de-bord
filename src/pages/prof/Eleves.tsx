@@ -1,10 +1,8 @@
 import clsx from 'clsx'
 import {
-  Check, ChevronDown, ChevronUp, Copy, KeyRound, Link2, Printer, RefreshCw, UserMinus, UserPlus, Users, UserX,
+  Check, ChevronDown, ChevronUp, Copy, KeyRound, Printer, RefreshCw, UserMinus, UserPlus, Users, UserX,
 } from 'lucide-react'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { fondTeinte, teinte } from '../../components/carnet/fils'
-import { CarteInfo } from '../../components/CarteInfo'
 import { imprimerCodes } from '../../components/eleves/imprimerCodes'
 import {
   Bascule, Bouton, BoutonIcone, Champ, Chargement, Entete, Erreur, Feuille, Saisie, useConfirmation, useToast,
@@ -75,45 +73,45 @@ export default function Eleves() {
   const eleveFiche = tous.find((e) => e.id === fiche) ?? null
   const indexFiche = eleveFiche ? actifs.findIndex((e) => e.id === eleveFiche.id) : -1
 
+  const pluriel = (n: number, mot: string) => `${n} ${mot}${n > 1 ? 's' : ''}`
+  const sousTitre = actifs.length
+    ? `${pluriel(actifs.length, 'élève')}, ${nbRelies} famille${nbRelies > 1 ? 's' : ''} reliée${nbRelies > 1 ? 's' : ''}`
+    : undefined
+
   return (
     <div>
       <Entete
         titre="Élèves"
+        sousTitre={sousTitre}
         actions={<>
           {actifs.length > 0 && <BoutonIcone icone={Printer} label="Imprimer les codes familles" variante="secondaire" onClick={imprimer} />}
           <BoutonIcone icone={KeyRound} label="Ajouter une collègue" variante="secondaire" onClick={() => setCollegue(true)} />
         </>}
       />
 
-      {actifs.length > 0 && (
-        <div className="mb-5 grid grid-cols-2 gap-3 sm:max-w-md">
-          <CarteInfo icone={Users} couleur="#2E5BFF" fond="#E6ECFF" nombre={actifs.length} titre="Élèves" />
-          <CarteInfo icone={Link2} couleur={nbRelies === actifs.length ? '#13A35B' : '#B37400'} fond={nbRelies === actifs.length ? '#E1F6EA' : '#FFF4DC'}
-            nombre={<>{nbRelies}<span className="text-lg text-brume">/{actifs.length}</span></>} titre="Familles reliées" />
-        </div>
-      )}
-
-      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-        {actifs.map((e) => (
-          <li key={e.id}><CarteEleve e={e} familles={famillesDe(e.id)} onOuvrir={() => setFiche(e.id)} /></li>
-        ))}
-        <li>
-          <form onSubmit={ajouter} className="flex h-full min-h-[7.5rem] flex-col justify-center gap-2 rounded-[22px] border-2 border-dashed border-trait p-3">
-            <Saisie value={prenom} onChange={(e) => setPrenom(e.target.value)} placeholder="Prénom" aria-label="Prénom du nouvel élève" />
-            <Bouton type="submit" taille="s" variante="doux" icone={UserPlus} disabled={!prenom.trim()} enCours={ecrire.isPending && !!prenom} aria-label="Ajouter l'élève" />
-          </form>
-        </li>
-      </ul>
+      <div className="overflow-hidden rounded-3xl bg-white shadow-doux">
+        <ul className="divide-y divide-trait">
+          {actifs.map((e) => (
+            <li key={e.id}><LigneEleve e={e} familles={famillesDe(e.id)} onOuvrir={() => setFiche(e.id)} /></li>
+          ))}
+        </ul>
+        <form onSubmit={ajouter} className={clsx('flex items-center gap-2 px-4 py-3', actifs.length > 0 && 'border-t border-trait')}>
+          <Saisie value={prenom} onChange={(e) => setPrenom(e.target.value)} placeholder="Prénom du nouvel élève" aria-label="Prénom du nouvel élève"
+            className="border-transparent bg-papier py-2 focus:bg-white" />
+          <Bouton type="submit" variante="doux" icone={UserPlus} disabled={!prenom.trim()} enCours={ecrire.isPending && !!prenom}>Ajouter</Bouton>
+        </form>
+      </div>
 
       {inactifs.length > 0 && (
         <div className="mt-6">
-          <button onClick={() => setPartis(!partis)} aria-expanded={partis} title="Élèves partis"
-            className="mb-3 inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 font-bold text-brume shadow-sm">
-            <UserX className="size-4" /> {inactifs.length} {partis ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+          <button onClick={() => setPartis(!partis)} aria-expanded={partis}
+            className="mb-3 inline-flex items-center gap-2 rounded-xl px-2 py-1.5 text-sm font-semibold text-brume hover:text-encre">
+            <UserX className="size-4" /> {pluriel(inactifs.length, 'élève')} parti{inactifs.length > 1 ? 's' : ''}
+            {partis ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
           </button>
           {partis && (
-            <ul className="grid grid-cols-2 gap-3 opacity-60 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-              {inactifs.map((e) => <li key={e.id}><CarteEleve e={e} familles={famillesDe(e.id)} onOuvrir={() => setFiche(e.id)} /></li>)}
+            <ul className="divide-y divide-trait overflow-hidden rounded-3xl bg-white opacity-70 shadow-doux">
+              {inactifs.map((e) => <li key={e.id}><LigneEleve e={e} familles={famillesDe(e.id)} onOuvrir={() => setFiche(e.id)} /></li>)}
             </ul>
           )}
         </div>
@@ -128,24 +126,24 @@ export default function Eleves() {
   )
 }
 
-/** Carte élève : initiale, prénom, familles reliées et code en icônes */
-function CarteEleve({ e, familles, onOuvrir }: { e: Eleve; familles: ParentLien[]; onOuvrir: () => void }) {
-  const c = teinte(e.id)
+/** Ligne élève : initiale, nom, code famille, familles reliées */
+function LigneEleve({ e, familles, onOuvrir }: { e: Eleve; familles: ParentLien[]; onOuvrir: () => void }) {
   return (
     <button type="button" onClick={onOuvrir} aria-label={`Ouvrir la fiche de ${e.prenom}`}
-      className="flex h-full min-h-[7.5rem] w-full flex-col gap-2 rounded-[22px] p-3 text-left transition hover:brightness-[0.98]" style={{ background: fondTeinte(e.id) }}>
-      <span className="flex items-center justify-between">
-        <span className="flex size-11 items-center justify-center rounded-2xl bg-white font-titre text-xl font-semibold shadow-sm" style={{ color: c }} aria-hidden>
-          {e.prenom.slice(0, 1)}
-        </span>
-        <span className={clsx('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold', familles.length ? 'bg-succes text-white' : 'bg-white text-brume')}
-          title={familles.length ? familles.map(nomFamille).join(', ') : 'Pas encore de famille'}>
-          <Users className="size-3.5" />{familles.length}
-        </span>
+      className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition hover:bg-papier">
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-encre/[.06] text-sm font-semibold text-brume" aria-hidden>
+        {e.prenom.slice(0, 1)}
       </span>
-      <span className="truncate font-bold text-encre">{e.prenom}{e.nom ? ` ${e.nom}` : ''}</span>
-      <span className="mt-auto inline-flex items-center gap-1 font-titre text-xs font-semibold tracking-wider" style={{ color: c }} title="Code famille">
+      <span className="min-w-0 flex-1">
+        <span className="block truncate font-semibold text-encre">{e.prenom}{e.nom ? ` ${e.nom}` : ''}</span>
+        <span className="flex items-center gap-1 text-xs text-brume sm:hidden" title="Code famille"><KeyRound className="size-3" />{e.code_famille}</span>
+      </span>
+      <span className="hidden w-36 shrink-0 items-center gap-1.5 text-sm tabular-nums text-brume sm:flex" title="Code famille">
         <KeyRound className="size-3.5" />{e.code_famille}
+      </span>
+      <span className={clsx('w-24 shrink-0 text-right text-sm', familles.length ? 'text-succes' : 'text-brume/60')}
+        title={familles.length ? familles.map(nomFamille).join(', ') : 'Pas encore de famille'}>
+        {familles.length ? `${familles.length} famille${familles.length > 1 ? 's' : ''}` : '—'}
       </span>
     </button>
   )
@@ -207,23 +205,23 @@ function FicheEleve({ eleve, familles, onFermer, onCopier, place }: {
             <Champ label="Nom">{(id) => <Saisie id={id} value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Facultatif" />}</Champ>
           </div>
 
-          <section className="flex items-center gap-3 rounded-3xl bg-white p-3">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-bateau-clair text-bateau" title="Code famille"><KeyRound className="size-6" /></span>
-            <span className="flex-1 font-titre text-2xl font-semibold tracking-widest text-bateau">{eleve.code_famille}</span>
+          <section className="flex items-center gap-3 rounded-2xl bg-papier p-3">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-bateau-clair text-bateau" title="Code famille"><KeyRound className="size-[18px]" /></span>
+            <span className="flex-1 text-xl font-bold tracking-wider text-encre">{eleve.code_famille}</span>
             <BoutonIcone icone={Copy} label="Copier le code" onClick={onCopier} />
             <BoutonIcone icone={RefreshCw} label="Nouveau code" onClick={nouveauCode} disabled={enCours} />
           </section>
 
-          <section className="flex flex-col gap-2 rounded-3xl bg-white p-3">
+          <section className="flex flex-col gap-2 rounded-2xl bg-papier p-3">
             <div className="flex items-center gap-3">
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-succes-clair text-succes" title="Familles reliées"><Users className="size-6" /></span>
-              <span className="font-titre text-2xl font-semibold text-succes">{familles.length}</span>
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-succes-clair text-succes" title="Familles reliées"><Users className="size-[18px]" /></span>
+              <span className="font-semibold text-encre">{familles.length ? `${familles.length} famille${familles.length > 1 ? 's' : ''} reliée${familles.length > 1 ? 's' : ''}` : 'Pas encore de famille'}</span>
             </div>
             {familles.length > 0 && (
               <ul className="flex flex-col gap-1.5">
                 {familles.map((p) => (
-                  <li key={p.user_id} className="flex items-center gap-2 rounded-2xl bg-succes-clair px-3 py-1.5">
-                    <span className="flex-1 font-bold text-encre">{nomFamille(p)}</span>
+                  <li key={p.user_id} className="flex items-center gap-2 rounded-xl bg-white px-3 py-1.5">
+                    <span className="flex-1 font-semibold text-encre">{nomFamille(p)}</span>
                     <BoutonIcone icone={UserMinus} label={`Retirer ${nomFamille(p)}`} onClick={() => retirer(p)} className="size-8 text-alerte" />
                   </li>
                 ))}
@@ -259,9 +257,9 @@ function CodeEnseignante({ ouverte, onFermer, classeId }: { ouverte: boolean; on
 
   return (
     <Feuille ouverte={ouverte} onFermer={onFermer} titre="Ajouter une collègue">
-      <div className="flex items-center gap-3 rounded-3xl bg-white p-3">
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-ambre-clair text-ambre-fonce"><KeyRound className="size-6" /></span>
-        <span className="flex-1 font-titre text-2xl font-semibold tracking-widest text-ambre-fonce">{code ?? '…'}</span>
+      <div className="flex items-center gap-3 rounded-2xl bg-papier p-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-ambre-clair text-ambre-fonce"><KeyRound className="size-[18px]" /></span>
+        <span className="flex-1 text-xl font-bold tracking-wider text-encre">{code ?? '…'}</span>
         {code && <BoutonIcone icone={Copy} label="Copier le code" onClick={() => copier(code, toast)} />}
       </div>
       <p className="mt-3 text-sm text-brume">Elle crée un compte avec ce code.</p>

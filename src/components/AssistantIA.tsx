@@ -65,7 +65,7 @@ function JournalIA({ demande, onFermer }: { demande: { type: 'journee'; date: st
     return (
       <Coquille titre={titre} pret construire={() => ''} analyser={() => { throw new Error('Pas de jour de classe sur cette période.') }}
         apercu={() => null} importer={async () => ''} onFermer={onFermer}
-        options={<p className="rounded-2xl bg-ambre-clair px-4 py-3 text-sm font-bold text-ambre-fonce">Pas classe</p>} />
+        options={<p className="rounded-2xl bg-ambre-clair px-4 py-3 text-sm font-semibold text-ambre-fonce">Pas classe</p>} />
     )
   }
 
@@ -89,7 +89,7 @@ function JournalIA({ demande, onFermer }: { demande: { type: 'journee'; date: st
               if (!liste.length) return null
               return (
                 <div key={j} className="flex flex-col gap-1.5">
-                  <span className="self-start rounded-full bg-encre px-3 py-1 text-xs font-bold text-white">{maj1(fmtJourCourt(j))}</span>
+                  <span className="self-start rounded-full bg-encre px-3 py-1 text-xs font-semibold text-white">{maj1(fmtJourCourt(j))}</span>
                   {liste.map((s, i) => {
                     const c = conflits(s)
                     const m = matiere(s.matiere)
@@ -99,8 +99,8 @@ function JournalIA({ demande, onFermer }: { demande: { type: 'journee'; date: st
                         title={c.length ? (remplacer ? 'Remplace la séance prévue' : 'Créneau déjà rempli : ignorée') : undefined}>
                         <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white" style={{ color: m.couleur }}><I className="size-4" /></span>
                         <span className="min-w-0 flex-1">
-                          <span className="block text-[11px] font-bold tabular-nums" style={{ color: m.couleur }}>{fmtHeure(s.debut)}</span>
-                          <span className="block truncate text-sm font-bold text-encre">{s.titre}</span>
+                          <span className="block text-[11px] font-semibold tabular-nums" style={{ color: m.couleur }}>{fmtHeure(s.debut)}</span>
+                          <span className="block truncate text-sm font-semibold text-encre">{s.titre}</span>
                         </span>
                         {c.length > 0 && (remplacer ? <Replace className="size-4 shrink-0 text-ambre-fonce" /> : <Clock className="size-4 shrink-0 text-brume" />)}
                       </div>
@@ -121,8 +121,8 @@ function JournalIA({ demande, onFermer }: { demande: { type: 'journee'; date: st
                   <div key={i} className={clsx('flex items-center gap-2 rounded-2xl p-1.5', d.type === 'evaluation' && 'ring-2 ring-alerte', devoirExiste(d) && 'opacity-40')} style={{ background: m.fond }}>
                     <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white" style={{ color: m.couleur }}><I className="size-4" /></span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-bold leading-snug text-encre">{d.texte}</span>
-                      <span className="block text-[11px] font-bold" style={{ color: m.couleur }}>→ {fmtJourCourt(d.pour_le)}</span>
+                      <span className="block text-sm font-semibold leading-snug text-encre">{d.texte}</span>
+                      <span className="block text-[11px] font-semibold" style={{ color: m.couleur }}>→ {fmtJourCourt(d.pour_le)}</span>
                     </span>
                     {d.type !== 'travail' && <TI className="size-4 shrink-0" style={{ color: t.couleur }} />}
                   </div>
@@ -130,7 +130,7 @@ function JournalIA({ demande, onFermer }: { demande: { type: 'journee'; date: st
               })}
             </div>
           )}
-          {lu.erreurs.length > 0 && <p className="text-xs font-bold text-brume">{lu.erreurs.length} ignoré(s)</p>}
+          {lu.erreurs.length > 0 && <p className="text-xs font-semibold text-brume">{lu.erreurs.length} ignoré(s)</p>}
         </div>
       )}
       importer={async (lu) => {
@@ -183,8 +183,8 @@ function SequenceIA({ sequenceId, onFermer }: { sequenceId: string; onFermer: ()
                   {(remplacer ? 0 : etapes.data?.length ?? 0) + i + 1}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block font-bold leading-snug text-encre">{e.titre}</span>
-                  {e.duree ? <span className="inline-flex items-center gap-1 text-xs font-bold" style={{ color: m.couleur }}><Clock className="size-3.5" />{e.duree} min</span> : null}
+                  <span className="block font-semibold leading-snug text-encre">{e.titre}</span>
+                  {e.duree ? <span className="inline-flex items-center gap-1 text-xs font-semibold" style={{ color: m.couleur }}><Clock className="size-3.5" />{e.duree} min</span> : null}
                 </span>
               </li>
             ))}
@@ -230,7 +230,7 @@ function AppreciationsIA({ bilan, eleveIds, onFermer }: { bilan: string; eleveId
       titre={def?.nom ?? bilan}
       pret={pret}
       onFermer={onFermer}
-      options={<p className="inline-flex items-center gap-2 text-sm font-bold text-brume"><Users className="size-4" />{choisis.length} · prénoms non envoyés</p>}
+      options={<p className="inline-flex items-center gap-2 text-sm font-semibold text-brume"><Users className="size-4" />{choisis.length} · prénoms non envoyés</p>}
       construire={(precisions) => promptAppreciations({ classe, bilanNom: def?.nom ?? bilan, codes, evaluations: evalsBilan, bilans: lsu.data ?? [], precisions })}
       analyser={(t) => lireAppreciations(extraire(t), codes)}
       apercu={(lu) => (
@@ -241,10 +241,10 @@ function AppreciationsIA({ bilan, eleveIds, onFermer }: { bilan: string; eleveId
               <li key={a.eleve_id} className="flex flex-col gap-2 rounded-3xl bg-white p-3 shadow-sm">
                 <span className="flex items-center gap-2">
                   <span className="flex size-9 items-center justify-center rounded-xl bg-bateau font-titre text-white">{e?.prenom.slice(0, 1)}</span>
-                  <span className="font-bold">{e?.prenom}</span>
+                  <span className="font-semibold">{e?.prenom}</span>
                 </span>
                 {Object.entries(a.appreciations).map(([k, v]) => (
-                  <p key={k} className="text-sm leading-snug"><span className="mr-1 rounded-full bg-encre/5 px-2 text-[11px] font-bold text-brume">{nomMatiere(k)}</span>{v}</p>
+                  <p key={k} className="text-sm leading-snug"><span className="mr-1 rounded-full bg-encre/5 px-2 text-[11px] font-semibold text-brume">{nomMatiere(k)}</span>{v}</p>
                 ))}
                 {a.appreciation_generale && <p className="rounded-2xl bg-bateau-clair p-2 text-sm leading-snug">{a.appreciation_generale}</p>}
               </li>

@@ -52,7 +52,7 @@ export default function CarnetParent() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="font-titre text-3xl font-semibold text-encre">Carnet</h1>
+        <h1 className="text-2xl font-bold text-encre">Carnet</h1>
         <BoutonIcone icone={PenLine} label="Écrire à l'enseignante" variante="primaire" onClick={() => setNouveau(true)} />
       </div>
       {fils.length === 0 ? (
@@ -106,14 +106,14 @@ function VueFil({ fil, enfant, classeId, maLecture, onRetour }: {
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
         <BoutonIcone icone={ArrowLeft} label="Retour" onClick={onRetour} />
-        <h1 className="min-w-0 flex-1 truncate font-titre text-2xl font-semibold text-encre">{titreFil(racine)}</h1>
+        <h1 className="min-w-0 flex-1 truncate text-xl font-bold text-encre">{titreFil(racine)}</h1>
       </div>
-      <div className="flex flex-col gap-3 rounded-[28px] bg-[#EEF2FB] p-3">
+      <div className="flex flex-col gap-3 rounded-3xl bg-encre/[.03] p-3">
         <Bulle m={racine} moi={racine.auteur_id === userId} />
         {racine.a_signer && (
           <div className="flex justify-center py-1">
             {maLecture?.signe_le ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-succes px-3 py-1.5 text-sm font-bold text-white">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-succes px-3 py-1.5 text-sm font-semibold text-white">
                 <Check className="size-4" strokeWidth={3} />{fmtDateHeure(maLecture.signe_le)}
               </span>
             ) : (

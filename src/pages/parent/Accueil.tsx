@@ -16,7 +16,7 @@ import type { EvenementAgenda } from '../../lib/types'
 
 const TYPES: Record<EvenementAgenda['type'], [LucideIcon, string, string]> = {
   sortie: [CalendarDays, '#13A35B', '#E1F6EA'], evaluation: [ClipboardList, '#E5484D', '#FDE7E8'], reunion: [Users, '#7B4DFF', '#EEE8FF'],
-  info: [CalendarDays, '#2E5BFF', '#E6ECFF'], fete: [PartyPopper, '#DB2D84', '#FCE4F0'], vacances: [Sun, '#B37400', '#FFF4DC'],
+  info: [CalendarDays, '#3358E0', '#ECF0FF'], fete: [PartyPopper, '#DB2D84', '#FCE4F0'], vacances: [Sun, '#B37400', '#FFF4DC'],
 }
 
 export default function AccueilParent() {
@@ -49,64 +49,63 @@ export default function AccueilParent() {
   if (devoirs.isLoading) return <Chargement />
   const restants = pourProchain.filter((d) => !faits.includes(d.id)).length
 
+  const quandResume = resume ? (resume.date === auj ? "aujourd'hui" : fmtJourCourt(resume.date)) : ''
   return (
     <div className="flex flex-col gap-4">
       {(aSigner > 0 || aLire > 0) && (
-        <Link to="/carnet" className={clsx('flex items-center gap-3 rounded-3xl p-3 text-white shadow-doux', aSigner ? 'bg-alerte' : 'bg-bateau')}>
-          <span className="flex size-11 items-center justify-center rounded-2xl bg-white/20">{aSigner ? <Signature className="size-6" /> : <PenLine className="size-6" />}</span>
-          <span className="font-titre text-3xl font-semibold">{aSigner || aLire}</span>
-          <span className="text-sm font-bold opacity-90">{aSigner ? 'à signer' : 'nouveau'}</span>
-          <ChevronRight className="ml-auto size-6" />
+        <Link to="/carnet" className={clsx('flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold', aSigner ? 'bg-alerte-clair text-alerte' : 'bg-bateau-clair text-bateau-fonce')}>
+          {aSigner ? <Signature className="size-5 shrink-0" /> : <PenLine className="size-5 shrink-0" />}
+          <span className="flex-1">
+            {aSigner ? `${aSigner} mot${aSigner > 1 ? 's' : ''} à signer` : `${aLire} nouveau${aLire > 1 ? 'x' : ''} mot${aLire > 1 ? 's' : ''}`}
+          </span>
+          <ChevronRight className="size-5" />
         </Link>
       )}
 
-      <CarteInfo icone={BookCheck} couleur="#13A35B" fond="#E1F6EA" titre="Devoirs" nombre={restants}
-        action={<span className="rounded-full bg-encre px-3 py-1 text-sm font-bold text-white">{maj1(fmtJourCourt(prochain))}</span>}>
+      <CarteInfo icone={BookCheck} couleur="#13A35B" fond="#EAF7F0" titre={`Devoirs pour ${fmtJourCourt(prochain)}`} nombre={restants || undefined}>
         {pourProchain.length ? (
           <div className="flex flex-col gap-2">
             {pourProchain.map((d) => <CarteDevoir key={d.id} d={d} fait={faits.includes(d.id)} onFait={() => basculer(d.id)} />)}
           </div>
-        ) : <p className="py-2 text-center text-2xl text-trait">—</p>}
-        <Link to="/devoirs" className="mt-3 flex justify-end text-bateau" aria-label="Tous les devoirs"><ChevronRight className="size-6" /></Link>
+        ) : <p className="text-sm text-brume">Rien à faire pour ce jour-là.</p>}
+        <Link to="/devoirs" className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-bateau">Tous les devoirs <ChevronRight className="size-4" /></Link>
       </CarteInfo>
 
       {resume && (
-        <CarteInfo icone={Sun} couleur="#F2A516" fond="#FFF4DC" titre="En classe"
-          action={<span className="rounded-full bg-ambre-clair px-3 py-1 text-sm font-bold text-ambre-fonce">{resume.date === auj ? "Aujourd'hui" : maj1(fmtJourCourt(resume.date))}</span>}>
-          {resume.mot && <p className="mb-3 rounded-2xl bg-ambre-clair px-3 py-2">{resume.mot}</p>}
-          <div className="grid grid-cols-2 gap-2">
-            {resume.items.map((it, i) => {
-              const m = matiere(it.matiere)
-              const I = m.icone
-              return (
-                <div key={i} className="flex flex-col gap-2 rounded-2xl p-3" style={{ background: m.fond }}>
-                  <span className="flex size-9 items-center justify-center rounded-xl bg-white" style={{ color: m.couleur }}><I className="size-5" /></span>
-                  <span className="text-sm font-bold leading-snug text-encre">{it.texte.replace(/^[^:]{2,20}:\s*/, '')}</span>
-                </div>
-              )
-            })}
-          </div>
+        <CarteInfo icone={Sun} couleur="#A86C00" fond="#FEF6E6" titre={`En classe ${quandResume}`}>
+          {resume.mot && <p className="mb-3 whitespace-pre-line border-l-2 border-ambre pl-3 text-encre">{resume.mot}</p>}
+          <ul className="flex flex-col gap-2">
+            {resume.items.map((it, i) => (
+              <li key={i} className="flex items-start gap-2.5 text-[15px] leading-snug text-encre">
+                <span className="mt-1.5 size-2 shrink-0 rounded-full" style={{ background: matiere(it.matiere).couleur }} />
+                {it.texte}
+              </li>
+            ))}
+          </ul>
         </CarteInfo>
       )}
 
       {bientot.length > 0 && (
-        <div className="-mx-4 flex snap-x gap-3 overflow-x-auto px-4 pb-1">
-          {bientot.map((e) => {
-            const [I, c, f] = TYPES[e.type]
-            return (
-              <Link key={e.id} to="/agenda" className="flex w-36 shrink-0 snap-start flex-col gap-2 rounded-3xl bg-white p-3 shadow-doux">
-                <div className="flex items-center justify-between">
-                  <span className="flex flex-col leading-none">
-                    <span className="font-titre text-3xl font-semibold" style={{ color: c }}>{format(parseISO(e.date), 'd')}</span>
-                    <span className="text-xs font-bold text-brume">{format(parseISO(e.date), 'MMM', { locale: fr })}</span>
-                  </span>
-                  <span className="flex size-9 items-center justify-center rounded-xl" style={{ background: f, color: c }}><I className="size-5" /></span>
-                </div>
-                <span className="line-clamp-3 text-sm font-bold leading-snug">{e.titre}</span>
-              </Link>
-            )
-          })}
-        </div>
+        <section className="rounded-3xl bg-white p-4 shadow-doux" aria-label="Bientôt">
+          <h2 className="mb-2 text-[15px] font-semibold text-encre">Bientôt</h2>
+          <ul className="flex flex-col">
+            {bientot.map((e) => {
+              const [I, c] = TYPES[e.type]
+              return (
+                <li key={e.id} className="border-t border-trait/70 first:border-t-0">
+                  <Link to="/agenda" className="flex items-center gap-3 py-2.5">
+                    <span className="flex w-11 shrink-0 flex-col items-center leading-none">
+                      <span className="text-lg font-bold text-encre">{format(parseISO(e.date), 'd')}</span>
+                      <span className="text-[11px] text-brume">{format(parseISO(e.date), 'MMM', { locale: fr })}</span>
+                    </span>
+                    <span className="min-w-0 flex-1 text-sm font-medium leading-snug text-encre">{e.titre}</span>
+                    <I className="size-4 shrink-0" style={{ color: c }} />
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
       )}
     </div>
   )

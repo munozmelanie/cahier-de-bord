@@ -10,7 +10,7 @@ export function Anneau({ valeur, total, couleur, taille = 36, epaisseur = 4, tit
   return (
     <span className="relative inline-flex shrink-0 items-center justify-center" style={{ width: taille, height: taille }} title={titre} role="img" aria-label={titre}>
       <svg width={taille} height={taille} className="-rotate-90" aria-hidden>
-        <circle cx={taille / 2} cy={taille / 2} r={r} fill="none" stroke="#E2E7F1" strokeWidth={epaisseur} />
+        <circle cx={taille / 2} cy={taille / 2} r={r} fill="none" stroke="#E5E7EC" strokeWidth={epaisseur} />
         {p > 0 && (
           <circle cx={taille / 2} cy={taille / 2} r={r} fill="none" stroke={couleur} strokeWidth={epaisseur}
             strokeDasharray={c} strokeDashoffset={c * (1 - p)} strokeLinecap="round" />

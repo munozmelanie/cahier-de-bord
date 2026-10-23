@@ -7,15 +7,15 @@ import type { Matiere } from '../../lib/matieres'
 /** Une séance de la séquence, en carte numérotée de la couleur de la matière */
 export function CarteEtape({ e, m, onOuvrir, onPlacer }: { e: Etape; m: Matiere; onOuvrir: () => void; onPlacer: () => void }) {
   return (
-    <li className="flex items-center gap-3 rounded-[22px] p-3" style={{ background: m.fond }}>
+    <li className="flex items-center gap-3 rounded-3xl p-3" style={{ background: m.fond }}>
       <button type="button" onClick={onOuvrir} className="flex min-w-0 flex-1 items-center gap-3 text-left">
         <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white font-titre text-xl font-semibold shadow-sm" style={{ color: m.couleur }}>
           {e.numero}
         </span>
         <span className="min-w-0 flex-1">
-          <span className="line-clamp-2 font-bold leading-snug text-encre">{e.titre || '—'}</span>
+          <span className="line-clamp-2 font-semibold leading-snug text-encre">{e.titre || '—'}</span>
           {e.duree ? (
-            <span className="mt-0.5 inline-flex items-center gap-1 text-xs font-bold" style={{ color: m.couleur }}>
+            <span className="mt-0.5 inline-flex items-center gap-1 text-xs font-semibold" style={{ color: m.couleur }}>
               <Clock className="size-3.5" /> {e.duree} min
             </span>
           ) : null}
@@ -49,7 +49,7 @@ export function EditeurEtape({ e, m, premier, dernier, onFermer, onSave, onMonte
           <div className="grid grid-cols-[1fr_6rem] items-end gap-3">
             <TexteAuto label="Titre" uneLigne valeur={e.titre} onSave={(v) => onSave({ titre: v ?? '' })} />
             <div className="flex flex-col gap-1">
-              <span className="px-1 text-xs font-bold text-brume">Minutes</span>
+              <span className="px-1 text-xs font-semibold text-brume">Minutes</span>
               <SaisieAuto label="Durée (min)" placeholder="45" type="number" valeur={e.duree} onSave={(v) => onSave({ duree: v ? Number(v) : null })} />
             </div>
           </div>

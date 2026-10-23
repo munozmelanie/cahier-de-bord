@@ -116,7 +116,7 @@ export function SeanceEditeur({ base, onFermer }: { base: BrouillonSeance | null
           <Champ label="Matériel">{(id) => <Texte id={id} value={s.materiel ?? ''} onChange={(e) => maj({ materiel: e.target.value })} />}</Champ>
 
           <div className="flex flex-col gap-2">
-            <p className="flex items-center gap-1.5 text-sm font-bold"><Printer className="size-4 text-bateau" /> À préparer</p>
+            <p className="flex items-center gap-1.5 text-sm font-semibold"><Printer className="size-4 text-bateau" /> À préparer</p>
             {aFaire.map((a, i) => {
               const Icone = iconeAFaire(a.type)
               return (
@@ -151,7 +151,7 @@ export function SeanceEditeur({ base, onFermer }: { base: BrouillonSeance | null
 
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between">
-              <p className="flex items-center gap-1.5 text-sm font-bold"><BookCheck className="size-4 text-succes" /> Devoirs</p>
+              <p className="flex items-center gap-1.5 text-sm font-semibold"><BookCheck className="size-4 text-succes" /> Devoirs</p>
               <BoutonIcone icone={Plus} label="Ajouter un devoir" variante="doux" className="size-9" onClick={ajouterDevoir} />
             </div>
             {devoirsSeance.map((d) => <LigneDevoir key={d.id} d={d} onClick={() => setDevoir(d)} />)}

@@ -104,9 +104,9 @@ export function Placer({ base, onFermer, marquerEnCours }: {
       }
     >
       <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-3 rounded-[22px] p-3" style={{ background: m.fond }}>
+        <div className="flex items-center gap-3 rounded-3xl p-3" style={{ background: m.fond }}>
           <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm" style={{ color: m.couleur }}><I className="size-6" /></span>
-          <p className="min-w-0 flex-1 font-bold leading-snug text-encre">{base?.titre}</p>
+          <p className="min-w-0 flex-1 font-semibold leading-snug text-encre">{base?.titre}</p>
         </div>
 
         <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Jour">
@@ -115,7 +115,7 @@ export function Placer({ base, onFermer, marquerEnCours }: {
               title={fmtJour(j)}
               className={clsx('flex w-12 flex-col items-center rounded-2xl py-1.5 leading-none transition', !libreDate && date === j ? 'bg-encre text-white' : 'bg-white text-encre shadow-sm')}>
               <span className="font-titre text-lg font-semibold">{format(parseISO(j), 'd')}</span>
-              <span className="mt-0.5 text-[10px] font-bold uppercase opacity-80">{jourCourt(j)}</span>
+              <span className="mt-0.5 text-[10px] font-semibold uppercase opacity-80">{jourCourt(j)}</span>
             </button>
           ))}
           <button type="button" onClick={() => setLibreDate(true)} aria-label="Autre date" title="Autre date"
@@ -126,7 +126,7 @@ export function Placer({ base, onFermer, marquerEnCours }: {
         {libreDate && <Saisie type="date" value={date} onChange={(e) => { setDate(e.target.value); setChoix(null) }} aria-label="Jour" />}
 
         {ferme ? (
-          <p className="flex items-center gap-2 rounded-2xl bg-ambre-clair px-4 py-3 font-bold text-ambre-fonce">
+          <p className="flex items-center gap-2 rounded-2xl bg-ambre-clair px-4 py-3 font-semibold text-ambre-fonce">
             <Sun className="size-5" /> {vac ? vac.nom : 'Pas classe'}
           </p>
         ) : creneaux.length ? (
@@ -143,8 +143,8 @@ export function Placer({ base, onFermer, marquerEnCours }: {
                   style={{ background: cm.fond }}>
                   <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white" style={{ color: cm.couleur }}><CI className="size-5" /></span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-xs font-bold tabular-nums" style={{ color: cm.couleur }}>{fmtHeure(c.debut)}</span>
-                    <span className="block truncate text-sm font-bold text-encre">{pris[0]?.titre || c.libelle || cm.court}</span>
+                    <span className="block text-xs font-semibold tabular-nums" style={{ color: cm.couleur }}>{fmtHeure(c.debut)}</span>
+                    <span className="block truncate text-sm font-semibold text-encre">{pris[0]?.titre || c.libelle || cm.court}</span>
                   </span>
                   {pris.length > 0 && <span className="size-2.5 shrink-0 rounded-full bg-ambre" title="Déjà rempli" />}
                   {actif && <Check className="size-5 shrink-0 text-encre" />}

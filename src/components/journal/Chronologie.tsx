@@ -1,16 +1,15 @@
 import clsx from 'clsx'
-import { Check, Coffee, X } from 'lucide-react'
+import { Check, X } from 'lucide-react'
 import { minutes } from '../../lib/dates'
 import { matiere } from '../../lib/matieres'
 import type { Creneau, Seance } from '../../lib/types'
-import { iconeAFaire } from './SeanceEditeur'
 
 const PX = 2 // pixels par minute
-const MIN_SEANCE = 38 // hauteur minimale d'une séance (px)
-const MAX_PAUSE = 44 // une longue pause (repas) est resserrée
+const MIN_SEANCE = 40 // hauteur minimale d'une séance (px)
+const MAX_PAUSE = 36 // une longue pause (repas) est resserrée
 
 /** Axe du temps : linéaire, mais les séances courtes sont agrandies et la pause du midi resserrée */
-function construireAxe(seances: Seance[], pauses: Creneau[], debut: number, fin: number) {
+function construireAxe(seances: Seance[], pauses: Pick<Creneau, 'debut' | 'fin'>[], debut: number, fin: number) {
   const pts = [...new Set([debut, fin, ...seances.flatMap((x) => [minutes(x.debut), minutes(x.fin)]), ...pauses.flatMap((x) => [minutes(x.debut), minutes(x.fin)])])]
     .filter((t) => t >= debut && t <= fin).sort((a, b) => a - b)
   const haut = pts.slice(0, -1).map((t, i) => (pts[i + 1] - t) * PX)
@@ -22,7 +21,7 @@ function construireAxe(seances: Seance[], pauses: Creneau[], debut: number, fin:
     if (!enSeance && (enPause || t1 - t > 30)) haut[i] = Math.min(haut[i], MAX_PAUSE)
   })
   for (const x of seances) {
-    const idx = pts.slice(0, -1).map((t, i) => i).filter((i) => couvre(minutes(x.debut), minutes(x.fin), pts[i], pts[i + 1]))
+    const idx = pts.slice(0, -1).map((_, i) => i).filter((i) => couvre(minutes(x.debut), minutes(x.fin), pts[i], pts[i + 1]))
     const total = idx.reduce((n, i) => n + haut[i], 0)
     if (total > 0 && total < MIN_SEANCE) idx.forEach((i) => { haut[i] *= MIN_SEANCE / total })
   }
@@ -62,10 +61,32 @@ function colonnes(l: Seance[]) {
   return res
 }
 
+const SUIVANT: Record<Seance['statut'], Seance['statut']> = { prevue: 'faite', faite: 'non_faite', non_faite: 'prevue' }
+const AIDE: Record<Seance['statut'], string> = {
+  prevue: 'Prévue (toucher : faite)', faite: 'Faite (toucher : pas faite)', non_faite: 'Pas faite (toucher : prévue)',
+}
+
+/** Case d'état unique : vide = prévue, coche verte = faite, croix rouge = pas faite */
+export function CaseStatut({ statut, onChange, petit }: { statut: Seance['statut']; onChange: (s: Seance['statut']) => void; petit?: boolean }) {
+  return (
+    <button type="button" onClick={() => onChange(SUIVANT[statut])} title={AIDE[statut]} aria-label={AIDE[statut]}
+      className={clsx('flex shrink-0 items-center justify-center rounded-full transition active:scale-90', petit ? 'size-6' : 'size-7',
+        statut === 'faite' && 'bg-succes text-white',
+        statut === 'non_faite' && 'bg-alerte text-white',
+        statut === 'prevue' && 'border-2 border-encre/15 bg-white/70 text-transparent hover:border-succes hover:text-succes')}>
+      {statut === 'non_faite' ? <X className="size-3.5" strokeWidth={3} /> : <Check className="size-3.5" strokeWidth={3} />}
+    </button>
+  )
+}
+
+type Pause = Pick<Creneau, 'id' | 'debut' | 'fin' | 'libelle'>
+
 /** La journée sur un axe horaire : heures à gauche, chaque séance à sa place et à sa durée */
 export function Chronologie({ seances, pauses, maintenant, enCoursId, onOuvrir, onStatut }: {
-  seances: Seance[]; pauses: Creneau[]; maintenant: number | null; enCoursId?: string | null
-  onOuvrir: (s: Seance) => void; onStatut: (s: Seance, st: Seance['statut']) => void
+  seances: Seance[]; pauses: Pause[]; maintenant: number | null; enCoursId?: string | null
+  onOuvrir: (s: Seance) => void
+  /** Absent : lecture seule (pas de case d'état) */
+  onStatut?: (s: Seance, st: Seance['statut']) => void
 }) {
   const avecHeure = seances.filter((s) => s.debut && s.fin && minutes(s.fin) > minutes(s.debut))
   const sansHeure = seances.filter((s) => !avecHeure.includes(s))
@@ -84,85 +105,72 @@ export function Chronologie({ seances, pauses, maintenant, enCoursId, onOuvrir, 
 
   return (
     <div>
-      <div className="relative flex" style={{ height: y(fin) + 8 }}>
+      <div className="relative flex" style={{ height: y(fin) + 6 }}>
         {/* Heures */}
-        <div className="relative w-14 shrink-0">
+        <div className="relative w-12 shrink-0">
           {etiquettes.map((e) => (
-            <span key={e.t} className="absolute right-2 font-titre text-sm font-semibold tabular-nums text-brume" style={{ top: e.y + 2 }}>{heureTxt(e.t)}</span>
+            <span key={e.t} className="absolute right-2.5 text-xs font-medium tabular-nums text-brume" style={{ top: e.y + 4 }}>{heureTxt(e.t)}</span>
           ))}
         </div>
-        {/* Grille et cartes */}
+        {/* Cartes */}
         <div className="relative flex-1">
-
-          {pauses.map((p) => (
-            <div key={p.id} title={p.libelle ?? 'Pause'} className="absolute inset-x-0 flex items-center justify-center rounded-xl text-brume/70"
-              style={{ top: y(minutes(p.debut)) + 2, height: Math.max(y(minutes(p.fin)) - y(minutes(p.debut)) - 4, 6), background: 'repeating-linear-gradient(135deg, #F1F3F8, #F1F3F8 6px, transparent 6px, transparent 12px)' }}>
-              {minutes(p.fin) - minutes(p.debut) >= 15 && <Coffee className="size-4" />}
-            </div>
-          ))}
+          {pauses.map((p) => {
+            const h = Math.max(y(minutes(p.fin)) - y(minutes(p.debut)) - 4, 4)
+            return (
+              <div key={p.id} className="absolute inset-x-0 flex items-center rounded-lg bg-encre/[.035] px-3"
+                style={{ top: y(minutes(p.debut)) + 2, height: h }}>
+                {h >= 16 && <span className="truncate text-xs text-brume">{p.libelle || 'Pause'}</span>}
+              </div>
+            )
+          })}
 
           {avecHeure.map((s) => {
             const m = matiere(s.matiere)
             const Icone = m.icone
-            const haut = y(minutes(s.debut)) + 2
             const hauteur = y(minutes(s.fin)) - y(minutes(s.debut)) - 4
             const { col, nb } = cols.get(s.id) ?? { col: 0, nb: 1 }
-            const petit = hauteur < 34
+            const petit = hauteur < 36
             const nonFaite = s.statut === 'non_faite'
-            const faite = s.statut === 'faite'
             return (
               <div key={s.id}
-                className={clsx('absolute flex items-center gap-2 overflow-hidden rounded-2xl px-2 shadow-sm transition', enCoursId === s.id && 'ring-[3px] ring-encre')}
+                className={clsx('absolute flex items-center gap-2 overflow-hidden rounded-xl border-l-[3px] pl-2.5 pr-1.5 transition',
+                  enCoursId === s.id && 'ring-2 ring-bateau ring-offset-1', s.statut === 'faite' && 'opacity-70')}
                 style={{
-                  top: haut, height: hauteur, left: `calc(${(col / nb) * 100}% + ${col ? 3 : 0}px)`, width: `calc(${100 / nb}% - ${nb > 1 ? 3 : 0}px)`,
-                  background: nonFaite ? `repeating-linear-gradient(45deg, #fff, #fff 8px, ${m.fond} 8px, ${m.fond} 16px)` : m.fond,
-                  opacity: faite ? 0.65 : 1,
+                  top: y(minutes(s.debut)) + 2, height: hauteur,
+                  left: `calc(${(col / nb) * 100}% + ${col ? 3 : 0}px)`, width: `calc(${100 / nb}% - ${nb > 1 ? 3 : 0}px)`,
+                  borderLeftColor: m.couleur,
+                  background: nonFaite ? `repeating-linear-gradient(135deg, ${m.fond}, ${m.fond} 7px, #fff 7px, #fff 14px)` : m.fond,
                 }}>
                 <button type="button" onClick={() => onOuvrir(s)} className="flex min-w-0 flex-1 items-center gap-2 self-stretch text-left" title={s.titre}>
-                  <span className={clsx('flex shrink-0 items-center justify-center rounded-xl bg-white', petit ? 'size-6' : 'size-9')} style={{ color: m.couleur }}>
-                    <Icone className={petit ? 'size-3.5' : 'size-5'} strokeWidth={2.3} />
-                  </span>
-                  <span className={clsx('min-w-0 flex-1 font-bold leading-tight text-encre', petit ? 'truncate text-xs' : 'line-clamp-2 text-sm', nonFaite && 'line-through opacity-60')}>
+                  <Icone className="size-4 shrink-0" strokeWidth={2.2} style={{ color: m.couleur }} />
+                  <span className={clsx('min-w-0 flex-1 font-semibold leading-tight text-encre', petit ? 'truncate text-[13px]' : 'line-clamp-2 text-sm', nonFaite && 'line-through decoration-encre/40')}>
                     {s.titre || m.court}
                   </span>
-                  {!petit && s.a_faire?.length > 0 && (
-                    <span className="flex shrink-0 gap-0.5" style={{ color: m.couleur }}>
-                      {s.a_faire.slice(0, 2).map((a, i) => { const I = iconeAFaire(a.type); return <I key={i} className="size-4" /> })}
-                    </span>
-                  )}
                 </button>
-                <span className="flex shrink-0 gap-1">
-                  <button type="button" aria-label="Faite" title="Faite" onClick={() => onStatut(s, faite ? 'prevue' : 'faite')}
-                    className={clsx('flex items-center justify-center rounded-full transition', petit ? 'size-6' : 'size-8', faite ? 'bg-succes text-white' : 'bg-white/80 text-brume hover:text-succes')}>
-                    <Check className={petit ? 'size-3.5' : 'size-4'} strokeWidth={3} />
-                  </button>
-                  <button type="button" aria-label="Pas faite" title="Pas faite" onClick={() => onStatut(s, nonFaite ? 'prevue' : 'non_faite')}
-                    className={clsx('flex items-center justify-center rounded-full transition', petit ? 'size-6' : 'size-8', nonFaite ? 'bg-alerte text-white' : 'bg-white/80 text-brume hover:text-alerte')}>
-                    <X className={petit ? 'size-3.5' : 'size-4'} strokeWidth={3} />
-                  </button>
-                </span>
+                {onStatut && <CaseStatut statut={s.statut} petit={petit} onChange={(st) => onStatut(s, st)} />}
               </div>
             )
           })}
 
           {maintenant != null && maintenant >= debut && maintenant <= fin && (
             <div className="pointer-events-none absolute inset-x-0 z-10 flex items-center" style={{ top: y(maintenant) }}>
-              <span className="-ml-1.5 size-3 rounded-full bg-alerte" />
-              <span className="h-0.5 flex-1 bg-alerte" />
+              <span className="-ml-1 size-2 rounded-full bg-alerte" />
+              <span className="h-px flex-1 bg-alerte" />
             </div>
           )}
         </div>
       </div>
 
       {sansHeure.length > 0 && (
-        <div className="mt-4 flex flex-col gap-2 pl-14">
+        <div className="mt-3 flex flex-col gap-1.5 pl-12">
           {sansHeure.map((s) => {
             const m = matiere(s.matiere)
             const Icone = m.icone
             return (
-              <button key={s.id} type="button" onClick={() => onOuvrir(s)} className="flex items-center gap-2 rounded-2xl px-2 py-2 text-left" style={{ background: m.fond }}>
-                <span className="flex size-9 items-center justify-center rounded-xl bg-white" style={{ color: m.couleur }}><Icone className="size-5" /></span>
-                <span className="font-bold">{s.titre || m.court}</span>
+              <button key={s.id} type="button" onClick={() => onOuvrir(s)} className="flex items-center gap-2 rounded-xl border-l-[3px] px-2.5 py-2.5 text-left"
+                style={{ background: m.fond, borderLeftColor: m.couleur }}>
+                <Icone className="size-4 shrink-0" style={{ color: m.couleur }} />
+                <span className="text-sm font-semibold">{s.titre || m.court}</span>
               </button>
             )
           })}

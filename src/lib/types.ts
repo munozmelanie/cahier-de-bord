@@ -12,6 +12,8 @@ export type Reglages = {
   vacances?: Vacances[]
   feries?: string[]
   lsu?: { rythme?: 'trimestre' | 'semestre' | 'periode'; bilans?: BilanLsu[] }
+  /** Mot affiché au remplaçant (accès par QR code) */
+  mot_remplacant?: string
 }
 
 export type Classe = {
