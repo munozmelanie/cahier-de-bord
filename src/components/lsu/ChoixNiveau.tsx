@@ -3,7 +3,7 @@ import { NIVEAUX } from '../../lib/matieres'
 import { ABREV } from './outils'
 
 /**
- * Quatre boutons de positionnement.
+ * Quatre gros boutons ronds de positionnement.
  * Valeur validée : pleine. Proposition calculée : en pointillé (un toucher la valide).
  * Toucher la valeur validée l'efface.
  */
@@ -14,7 +14,7 @@ export function ChoixNiveau({ valeur, proposition, onChange, label }: {
   label: string
 }) {
   return (
-    <div className="grid grid-cols-4 gap-1.5" role="radiogroup" aria-label={label}>
+    <div className="flex shrink-0 gap-1.5" role="radiogroup" aria-label={label}>
       {NIVEAUX.map((n) => {
         const choisi = valeur === n.v
         const propose = !valeur && proposition === n.v
@@ -24,18 +24,18 @@ export function ChoixNiveau({ valeur, proposition, onChange, label }: {
             type="button"
             role="radio"
             aria-checked={choisi}
+            aria-label={`${label} : ${n.nom}${propose ? ' (proposé)' : ''}`}
             title={propose ? `${n.nom} (proposé d'après les évaluations)` : n.nom}
             onClick={() => onChange(choisi ? undefined : n.v)}
             className={clsx(
-              'flex h-10 min-w-0 items-center justify-center rounded-xl px-1 text-xs font-bold transition active:scale-95',
+              'flex size-10 items-center justify-center rounded-full font-titre text-sm font-semibold transition active:scale-90 sm:size-11',
               choisi && 'text-white shadow-sm',
-              propose && 'border-2 border-dashed',
-              !choisi && !propose && 'opacity-60 hover:opacity-100',
+              propose && 'border-[2.5px] border-dashed bg-white',
+              !choisi && !propose && 'bg-white/80 opacity-70 hover:opacity-100',
             )}
-            style={choisi ? { background: n.couleur } : { background: n.fond, color: n.couleur, borderColor: propose ? n.couleur : undefined }}
+            style={choisi ? { background: n.couleur } : { color: n.couleur, borderColor: propose ? n.couleur : undefined }}
           >
-            <span className="font-titre text-sm sm:hidden">{ABREV[n.v]}</span>
-            <span className="hidden truncate sm:inline">{n.court}</span>
+            {ABREV[n.v]}
           </button>
         )
       })}

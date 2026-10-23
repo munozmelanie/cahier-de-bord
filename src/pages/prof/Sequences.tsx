@@ -3,11 +3,11 @@ import { ArrowLeft, Layers, Plus, Printer, Sparkles, Trash2 } from 'lucide-react
 import { useMemo, useState } from 'react'
 import { AssistantIA, type DemandeIA } from '../../components/AssistantIA'
 import { Placer, type BaseSeance } from '../../components/progressions/Placer'
-import { CarteEtape } from '../../components/sequences/CarteEtape'
+import { CarteEtape, EditeurEtape } from '../../components/sequences/CarteEtape'
 import { TexteAuto } from '../../components/sequences/ChampAuto'
 import { imprimerSequence } from '../../components/sequences/imprimer'
 import {
-  Badge, Bouton, BoutonIcone, ChoixMatiere, Chargement, Entete, Feuille, Onglets, PastilleMatiere, Vide, useConfirmation, useToast,
+  Bouton, BoutonIcone, ChoixMatiere, Chargement, Entete, Feuille, Onglets, Vide, useConfirmation, useToast,
 } from '../../components/ui'
 import { useEcrire, useEtapes, useSequences } from '../../lib/donnees'
 import { aujourdhui, periodeCourante } from '../../lib/dates'
@@ -31,10 +31,10 @@ export default function Sequences() {
     return n
   }, [etapes.data])
 
-  const visibles = (seqs.data ?? []).filter((s) => filtre === 'toutes' || s.periode === filtre)
-  const groupes = MATIERES.map((m) => [m.id, visibles.filter((s) => s.matiere === m.id)] as const)
-    .concat([['autre', visibles.filter((s) => !MATIERES.some((m) => m.id === s.matiere))]])
-    .filter(([, l]) => l.length)
+  const ordre = MATIERES.map((m) => m.id)
+  const visibles = (seqs.data ?? [])
+    .filter((s) => filtre === 'toutes' || s.periode === filtre)
+    .sort((a, b) => ordre.indexOf(a.matiere ?? '') - ordre.indexOf(b.matiere ?? '') || a.titre.localeCompare(b.titre))
   const seq = seqs.data?.find((s) => s.id === choisie) ?? null
 
   async function nouvelle() {
@@ -48,47 +48,42 @@ export default function Sequences() {
     } catch (e) { toast((e as Error).message, 'erreur') }
   }
 
+  if (seq) return <Editeur key={seq.id} seq={seq} onRetour={() => setChoisie(null)} />
+
   return (
     <div>
-      <Entete titre="Séquences" actions={<Bouton icone={Plus} onClick={nouvelle} enCours={ecrire.isPending && !choisie}>Nouvelle</Bouton>} />
-      <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-        <div className={clsx('min-w-0', seq && 'hidden lg:block')}>
-          <div className="mb-4">
-            <Onglets valeur={filtre} onChange={setFiltre} options={[{ id: 'toutes', label: 'Toutes' }, ...periodes.map((p) => ({ id: p.id, label: p.id }))]} />
-          </div>
-          {seqs.isLoading ? <Chargement /> : !groupes.length ? (
-            <Vide icone={Layers} texte="Aucune séquence pour l'instant." action={<Bouton icone={Plus} onClick={nouvelle}>Nouvelle séquence</Bouton>} />
-          ) : (
-            <div className="flex flex-col gap-4">
-              {groupes.map(([m, liste]) => (
-                <div key={m}>
-                  <p className="mb-1.5 px-1 text-sm font-bold" style={{ color: matiere(m).couleur }}>{matiere(m).nom}</p>
-                  <ul className="flex flex-col gap-1.5">
-                    {liste.map((s) => (
-                      <li key={s.id}>
-                        <button onClick={() => setChoisie(s.id)}
-                          className={clsx('flex w-full items-center gap-3 rounded-2xl bg-white p-2.5 text-left shadow-doux transition',
-                            choisie === s.id ? 'ring-2 ring-bateau' : 'hover:ring-2 hover:ring-trait')}>
-                          <PastilleMatiere id={s.matiere} taille="s" />
-                          <span className="min-w-0 flex-1 truncate font-bold">{s.titre || 'Sans titre'}</span>
-                          {s.periode && <Badge couleur="brume">{s.periode}</Badge>}
-                          <span className="w-6 shrink-0 text-right text-sm font-bold tabular-nums text-brume">{nbEtapes.get(s.id) ?? 0}</span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+      <Entete titre="Séquences" actions={<>
+        <Onglets valeur={filtre} onChange={setFiltre} options={[{ id: 'toutes', label: 'Tout' }, ...periodes.map((p) => ({ id: p.id, label: p.id }))]} />
+        <BoutonIcone icone={Plus} label="Nouvelle séquence" variante="primaire" onClick={nouvelle} disabled={ecrire.isPending} />
+      </>} />
+      {seqs.isLoading ? <Chargement /> : !visibles.length ? (
+        <Vide icone={Layers} texte="Vide" action={<Bouton icone={Plus} onClick={nouvelle}>Séquence</Bouton>} />
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {visibles.map((s) => {
+            const m = matiere(s.matiere)
+            const I = m.icone
+            const n = nbEtapes.get(s.id) ?? 0
+            return (
+              <button key={s.id} type="button" onClick={() => setChoisie(s.id)}
+                className="flex min-h-[9rem] flex-col gap-3 rounded-3xl p-4 text-left transition hover:-translate-y-0.5 hover:shadow-doux"
+                style={{ background: m.fond }}>
+                <div className="flex items-start justify-between gap-2">
+                  <span className="flex size-11 items-center justify-center rounded-2xl bg-white shadow-sm" style={{ color: m.couleur }} title={m.nom}><I className="size-6" /></span>
+                  {s.periode && <span className="rounded-full bg-white/80 px-2 text-xs font-bold leading-6" style={{ color: m.couleur }}>{s.periode}</span>}
                 </div>
-              ))}
-            </div>
-          )}
+                <span className="line-clamp-3 flex-1 font-titre text-lg font-semibold leading-snug text-encre">{s.titre || '—'}</span>
+                <span className="flex flex-wrap gap-1" aria-label={`${n} séances`}>
+                  {Array.from({ length: Math.min(n, 10) }, (_, i) => (
+                    <span key={i} className="flex size-5 items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: m.couleur }}>{i + 1}</span>
+                  ))}
+                  {n > 10 && <span className="text-xs font-bold" style={{ color: m.couleur }}>+{n - 10}</span>}
+                </span>
+              </button>
+            )
+          })}
         </div>
-
-        <div className={clsx('min-w-0', !seq && 'hidden lg:block')}>
-          {seq ? <Editeur key={seq.id} seq={seq} onRetour={() => setChoisie(null)} /> : (
-            <div className="hidden lg:block"><Vide icone={Layers} texte="Choisis une séquence ou crée-en une." /></div>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   )
 }
@@ -104,7 +99,10 @@ function Editeur({ seq, onRetour }: { seq: Sequence; onRetour: () => void }) {
   const [ouverte, setOuverte] = useState<string | null>(null)
   const [placer, setPlacer] = useState<BaseSeance | null>(null)
   const m = matiere(seq.matiere)
+  const I = m.icone
   const liste = [...(etapes.data ?? [])].sort((a, b) => a.numero - b.numero)
+  const iOuverte = liste.findIndex((e) => e.id === ouverte)
+  const etapeOuverte = iOuverte >= 0 ? liste[iOuverte] : null
 
   const maj = (patch: Partial<Sequence>) =>
     ecrire.mutateAsync({ op: 'update', table: 'sequences', id: seq.id, patch }).catch((e) => toast((e as Error).message, 'erreur'))
@@ -137,12 +135,14 @@ function Editeur({ seq, onRetour }: { seq: Sequence; onRetour: () => void }) {
     ])
   }
 
+  const versPlacer = (e: Etape) => setPlacer({ titre: e.titre, matiere: seq.matiere, objectif: e.objectif, deroule: e.deroule, materiel: e.materiel, sequence_id: seq.id, etape_id: e.id })
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2">
-        <BoutonIcone icone={ArrowLeft} label="Toutes les séquences" onClick={onRetour} className="lg:hidden" />
+        <BoutonIcone icone={ArrowLeft} label="Toutes les séquences" variante="secondaire" onClick={onRetour} />
         <div className="ml-auto flex gap-2">
-          <Bouton variante="doux" icone={Sparkles} onClick={() => setIa({ type: 'sequence', sequenceId: seq.id })}>ChatGPT</Bouton>
+          <BoutonIcone icone={Sparkles} label="Proposer les séances avec ChatGPT" variante="secondaire" onClick={() => setIa({ type: 'sequence', sequenceId: seq.id })} />
           <BoutonIcone icone={Printer} label="Imprimer la fiche" variante="secondaire"
             onClick={() => { if (!imprimerSequence(classe, seq, liste)) toast('Autorise les fenêtres pour imprimer', 'erreur') }} />
           <BoutonIcone icone={Trash2} label="Supprimer la séquence" variante="secondaire"
@@ -153,19 +153,26 @@ function Editeur({ seq, onRetour }: { seq: Sequence; onRetour: () => void }) {
         </div>
       </div>
 
-      <section className="rounded-3xl bg-white p-4 shadow-doux sm:p-5">
+      <section className="rounded-3xl p-4 sm:p-5" style={{ background: m.fond }}>
         <div className="flex items-start gap-3">
-          <button onClick={() => setChoixMatiere(true)} aria-label={`Matière : ${m.nom}`} title="Changer de matière"><PastilleMatiere id={seq.matiere} taille="l" /></button>
+          <button onClick={() => setChoixMatiere(true)} aria-label={`Matière : ${m.nom}`} title={m.nom}
+            className="flex size-14 shrink-0 items-center justify-center rounded-3xl bg-white shadow-sm" style={{ color: m.couleur }}>
+            <I className="size-7" />
+          </button>
           <div className="min-w-0 flex-1">
             <TexteAuto label="Titre de la séquence" etiquette={false} uneLigne valeur={seq.titre} onSave={(v) => maj({ titre: v ?? '' })}
-              className="border-transparent bg-transparent px-1 py-1 font-titre text-2xl font-semibold leading-tight focus:border-trait" />
-            <div className="mt-1 flex flex-wrap items-center gap-2 px-1">
-              <span className="text-sm font-bold" style={{ color: m.couleur }}>{m.nom}</span>
-              <select value={seq.periode ?? ''} onChange={(e) => maj({ periode: e.target.value || null })} aria-label="Période"
-                className="h-7 rounded-full border border-trait bg-papier px-2 text-xs font-bold text-brume">
-                <option value="">Période</option>
-                {(classe.reglages.periodes ?? []).map((p) => <option key={p.id} value={p.id}>{p.id}</option>)}
-              </select>
+              className="border-transparent bg-transparent px-1 py-1 font-titre text-2xl font-semibold leading-tight focus:border-trait focus:bg-white" />
+            <div className="mt-1 flex flex-wrap gap-1 px-1" role="radiogroup" aria-label="Période">
+              {(classe.reglages.periodes ?? []).map((p) => {
+                const actif = seq.periode === p.id
+                return (
+                  <button key={p.id} type="button" role="radio" aria-checked={actif} onClick={() => maj({ periode: actif ? null : p.id })}
+                    className={clsx('h-7 rounded-full px-2.5 text-xs font-bold transition', actif ? 'text-white' : 'bg-white/70 text-brume')}
+                    style={actif ? { background: m.couleur } : undefined}>
+                    {p.id}
+                  </button>
+                )
+              })}
             </div>
           </div>
         </div>
@@ -177,20 +184,28 @@ function Editeur({ seq, onRetour }: { seq: Sequence; onRetour: () => void }) {
       </section>
 
       {etapes.isLoading ? <Chargement /> : (
-        <ol className="flex flex-col gap-2">
-          {liste.map((e, i) => (
-            <CarteEtape key={e.id} e={e} couleur={m.couleur} premier={i === 0} dernier={i === liste.length - 1}
-              ouverte={ouverte === e.id} onOuvrir={() => setOuverte(ouverte === e.id ? null : e.id)}
-              onSave={(p) => majEtape(e.id, p)} onMonter={() => echanger(i, i - 1)} onDescendre={() => echanger(i, i + 1)}
-              onPlacer={() => setPlacer({ titre: e.titre, matiere: seq.matiere, objectif: e.objectif, deroule: e.deroule, materiel: e.materiel, sequence_id: seq.id, etape_id: e.id })}
-              onSupprimer={() => demander(`Supprimer « ${e.titre} » ?`, () => supprimerEtape(e))}
-            />
+        <ol className="grid gap-2 md:grid-cols-2">
+          {liste.map((e) => (
+            <CarteEtape key={e.id} e={e} m={m} onOuvrir={() => setOuverte(e.id)} onPlacer={() => versPlacer(e)} />
           ))}
+          <li>
+            <button type="button" onClick={ajouterEtape} aria-label="Ajouter une séance" title="Ajouter une séance"
+              className="flex h-full min-h-[4.25rem] w-full items-center justify-center rounded-[22px] border-2 border-dashed transition hover:bg-white"
+              style={{ borderColor: m.couleur, color: m.couleur }}>
+              <Plus className="size-6" />
+            </button>
+          </li>
         </ol>
       )}
-      <div><Bouton variante="secondaire" icone={Plus} onClick={ajouterEtape}>Ajouter une séance</Bouton></div>
 
-      <Feuille ouverte={choixMatiere} onFermer={() => setChoixMatiere(false)} titre="Matière">
+      <EditeurEtape e={etapeOuverte} m={m} premier={iOuverte === 0} dernier={iOuverte === liste.length - 1}
+        onFermer={() => setOuverte(null)}
+        onSave={(p) => etapeOuverte && majEtape(etapeOuverte.id, p)}
+        onMonter={() => echanger(iOuverte, iOuverte - 1)} onDescendre={() => echanger(iOuverte, iOuverte + 1)}
+        onPlacer={() => { if (etapeOuverte) { const e = etapeOuverte; setOuverte(null); versPlacer(e) } }}
+        onSupprimer={() => { const e = etapeOuverte; if (e) demander(`Supprimer « ${e.titre} » ?`, () => { setOuverte(null); supprimerEtape(e) }) }}
+      />
+      <Feuille ouverte={choixMatiere} onFermer={() => setChoixMatiere(false)} titre="">
         <ChoixMatiere valeur={seq.matiere} onChange={(id) => { maj({ matiere: id }); setChoixMatiere(false) }} />
       </Feuille>
       <Placer base={placer} onFermer={() => setPlacer(null)} />

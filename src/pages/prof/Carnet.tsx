@@ -1,10 +1,10 @@
 import clsx from 'clsx'
-import { ArrowLeft, Inbox, MessagesSquare, PenLine, Signature, Trash2 } from 'lucide-react'
+import { ArrowLeft, Inbox, MessagesSquare, PenLine, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Avatar, Bulle, construireFils, indexLectures, titreFil, ZoneReponse, type Fil } from '../../components/carnet/fils'
+import { Avatar, Bulle, CarteFil, construireFils, fondTeinte, indexLectures, teinte, titreFil, ZoneReponse, type Fil } from '../../components/carnet/fils'
 import { NouveauMotProf } from '../../components/carnet/NouveauMot'
 import { Signatures } from '../../components/carnet/Signatures'
-import { Badge, Bouton, BoutonIcone, Chargement, Entete, Erreur, Onglets, useConfirmation, useToast, Vide } from '../../components/ui'
+import { BoutonIcone, Chargement, Entete, Erreur, useConfirmation, useToast, Vide } from '../../components/ui'
 import { quand } from '../../lib/dates'
 import { useEcrire, useEleves, useLectures, useMessages, useParents } from '../../lib/donnees'
 import { useClasse, useSession } from '../../lib/session'
@@ -49,28 +49,33 @@ export default function CarnetProf() {
   return (
     <div>
       <div className={clsx(fil && 'hidden lg:block')}>
-        <Entete titre="Carnet de liaison" actions={<Bouton icone={PenLine} onClick={() => setNouveau(true)}>Nouveau mot</Bouton>} />
+        <Entete titre="Carnet" actions={<>
+          {fils.length > 0 && (
+            <button type="button" onClick={() => setFiltre(filtre === 'alire' ? 'tout' : 'alire')} aria-pressed={filtre === 'alire'}
+              title={filtre === 'alire' ? 'Tout afficher' : 'Seulement les non lus'}
+              className={clsx('relative inline-flex size-10 items-center justify-center rounded-full border transition',
+                filtre === 'alire' ? 'border-encre bg-encre text-white' : 'border-trait bg-white text-encre')}>
+              <Inbox className="size-5" />
+              {aLire.length > 0 && <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-alerte px-1 text-center text-[11px] font-bold leading-5 text-white">{aLire.length}</span>}
+            </button>
+          )}
+          <BoutonIcone icone={PenLine} label="Nouveau mot" variante="primaire" onClick={() => setNouveau(true)} />
+        </>} />
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(300px,380px)_1fr]">
         <section className={clsx('min-w-0', fil && 'hidden lg:block')}>
-          {fils.length > 0 && (
-            <div className="mb-3">
-              <Onglets valeur={filtre} onChange={setFiltre} options={[
-                { id: 'tout', label: 'Tout', icone: MessagesSquare },
-                { id: 'alire', label: `À lire${aLire.length ? ` (${aLire.length})` : ''}`, icone: Inbox },
-              ]} />
-            </div>
-          )}
           {visibles.length === 0 ? (
-            <Vide icone={MessagesSquare} texte={filtre === 'alire' ? 'Tout est lu.' : 'Aucun mot pour le moment.'}
-              action={filtre === 'tout' ? <Bouton icone={PenLine} onClick={() => setNouveau(true)}>Écrire un mot</Bouton> : undefined} />
+            <Vide icone={filtre === 'alire' ? Inbox : MessagesSquare} texte={filtre === 'alire' ? 'Tout est lu' : 'Aucun mot'}
+              action={filtre === 'tout' ? <BoutonIcone icone={PenLine} label="Écrire un mot" variante="primaire" onClick={() => setNouveau(true)} /> : undefined} />
           ) : (
             <ul className="flex flex-col gap-2">
               {visibles.map((f) => (
-                <LigneFil key={f.racine.id} f={f} eleve={f.racine.eleve_id ? elevesParId.get(f.racine.eleve_id) : null}
-                  nonLus={nonLus(f).length} actif={f.racine.id === ouvert} nbEleves={(eleves.data ?? []).filter((e) => e.actif).length}
-                  lectures={lectures.get(f.racine.id) ?? []} onOuvrir={() => setOuvert(f.racine.id)} />
+                <li key={f.racine.id}>
+                  <LigneFil f={f} eleve={f.racine.eleve_id ? elevesParId.get(f.racine.eleve_id) : null}
+                    nonLus={nonLus(f).length} actif={f.racine.id === ouvert} nbEleves={(eleves.data ?? []).filter((e) => e.actif).length}
+                    lectures={lectures.get(f.racine.id) ?? []} onOuvrir={() => setOuvert(f.racine.id)} />
+                </li>
               ))}
             </ul>
           )}
@@ -100,33 +105,17 @@ function LigneFil({ f, eleve, nonLus, actif, onOuvrir, lectures, nbEleves }: {
   const dernier = f.reponses[f.reponses.length - 1] ?? f.racine
   const classeEntiere = !f.racine.eleve_id
   const signes = new Set(lectures.filter((l) => l.signe_le && l.eleve_id).map((l) => l.eleve_id)).size
+  const signature = f.racine.a_signer
+    ? classeEntiere
+      ? { etat: signes >= nbEleves ? 'signe' as const : 'attente' as const, texte: `${signes}/${nbEleves}` }
+      : { etat: signes ? 'signe' as const : 'attente' as const }
+    : null
   return (
-    <li>
-      <button onClick={onOuvrir}
-        className={clsx('flex w-full items-center gap-3 rounded-3xl p-3 text-left transition',
-          actif ? 'bg-white shadow-doux ring-2 ring-bateau' : 'bg-white/70 hover:bg-white')}>
-        <Avatar eleve={eleve} classe={classeEntiere} />
-        <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-2">
-            <span className={clsx('truncate text-encre', nonLus ? 'font-bold' : 'font-bold text-encre/80')}>
-              {classeEntiere ? titreFil(f.racine) : eleve?.prenom ?? 'Famille'}
-            </span>
-            <span className="ml-auto shrink-0 text-xs text-brume">{quand(f.dernier.slice(0, 10))}</span>
-          </span>
-          <span className="mt-0.5 flex items-center gap-2">
-            <span className={clsx('min-w-0 flex-1 truncate text-sm', nonLus ? 'text-encre' : 'text-brume')}>
-              {!classeEntiere && f.racine.titre ? `${f.racine.titre} — ` : ''}{dernier.texte}
-            </span>
-            {f.racine.a_signer && (
-              <Badge couleur={classeEntiere ? (signes >= nbEleves ? 'succes' : 'ambre') : signes ? 'succes' : 'ambre'}>
-                <Signature className="size-3" />{classeEntiere ? `${signes}/${nbEleves}` : signes ? 'Signé' : 'À signer'}
-              </Badge>
-            )}
-            {nonLus > 0 && <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-alerte text-[11px] font-bold text-white">{nonLus}</span>}
-          </span>
-        </span>
-      </button>
-    </li>
+    <CarteFil
+      titre={classeEntiere ? titreFil(f.racine) : eleve?.prenom ?? 'Famille'}
+      apercu={(!classeEntiere && f.racine.titre && dernier === f.racine ? `${f.racine.titre} · ` : '') + dernier.texte}
+      eleve={eleve} classe={classeEntiere} date={quand(f.dernier.slice(0, 10))}
+      actif={actif} nonLus={nonLus} signature={signature} onClick={onOuvrir} />
   )
 }
 
@@ -167,10 +156,7 @@ function VueFil({ fil, classeId, eleves, elevesParId, lectures, parents, onRetou
       <div className="flex items-center gap-3">
         <BoutonIcone icone={ArrowLeft} label="Retour" onClick={onRetour} className="lg:hidden" />
         <Avatar eleve={eleve} classe={classeEntiere} />
-        <div className="min-w-0 flex-1">
-          <h2 className="truncate font-titre text-2xl font-semibold text-encre">{classeEntiere ? titreFil(racine) : eleve?.prenom ?? 'Famille'}</h2>
-          <p className="truncate text-sm text-brume">{classeEntiere ? 'Toute la classe' : `Famille de ${eleve?.prenom ?? '…'}`}</p>
-        </div>
+        <h2 className="min-w-0 flex-1 truncate font-titre text-2xl font-semibold text-encre">{classeEntiere ? titreFil(racine) : eleve?.prenom ?? 'Famille'}</h2>
         <BoutonIcone icone={Trash2} label="Supprimer le fil" onClick={supprimer} />
       </div>
 
@@ -182,12 +168,13 @@ function VueFil({ fil, classeId, eleves, elevesParId, lectures, parents, onRetou
           groupes.map(([eleveId, liste]) => {
             const e = elevesParId.get(eleveId)
             return (
-              <div key={eleveId} className="flex flex-col gap-3 rounded-3xl bg-white/60 p-3">
-                <p className="flex items-center gap-2 text-sm font-bold text-brume">
-                  <span className="size-2 rounded-full" style={{ background: '#2E5BFF' }} /> Famille de {e?.prenom ?? '…'}
+              <div key={eleveId} className="flex flex-col gap-3 rounded-3xl p-3" style={{ background: fondTeinte(eleveId) }}>
+                <p className="flex items-center gap-2 font-bold text-encre">
+                  <span className="flex size-7 items-center justify-center rounded-lg bg-white font-titre text-sm" style={{ color: teinte(eleveId) }}>{e?.prenom.slice(0, 1) ?? '?'}</span>
+                  {e?.prenom ?? '…'}
                 </p>
                 {liste.map((m) => <Bulle key={m.id} m={m} moi={m.auteur_role === 'enseignant'} />)}
-                {e && <ZoneReponse placeholder={`Répondre à la famille de ${e.prenom}…`} onEnvoyer={(t) => repondre(e.id, t)} enCours={ecrire.isPending} />}
+                {e && <ZoneReponse placeholder={`Répondre à ${e.prenom}…`} onEnvoyer={(t) => repondre(e.id, t)} enCours={ecrire.isPending} />}
               </div>
             )
           })

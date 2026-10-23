@@ -97,3 +97,14 @@ export function useEnregistrementDiffere<T>(envoyer: (v: T) => Promise<unknown>,
 
 export const echapper = (s: string | null | undefined) =>
   (s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/\n/g, '<br>')
+
+/** Noms courts pour les cartes (le nom complet reste en infobulle et à l'impression) */
+export const NOM_COURT_LSU: Record<string, string> = {
+  fr: 'Français', ma: 'Maths', lv: 'Anglais', ap: 'Arts plastiques', em: 'Musique', hda: 'Histoire des arts',
+  eps: 'EPS', emc: 'EMC', hg: 'Histoire-géo', st: 'Sciences',
+}
+export const DOMAINE_COURT: Record<string, string> = {
+  'fr.oral': 'Oral', 'fr.lecture': 'Lecture', 'fr.ecriture': 'Écriture', 'fr.langue': 'Langue',
+  'ma.nombres': 'Nombres et calcul', 'ma.grandeurs': 'Grandeurs et mesures', 'ma.espace': 'Espace et géométrie',
+  'lv.ecouter': 'Écouter', 'lv.lire': 'Lire', 'lv.parler': 'Parler', 'lv.ecrire': 'Écrire', 'lv.dialoguer': 'Dialoguer',
+}

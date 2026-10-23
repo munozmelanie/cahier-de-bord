@@ -1,23 +1,19 @@
 import clsx from 'clsx'
-import { CalendarPlus, Circle, CircleCheck, CircleDot, Copy, Plus, Trash2 } from 'lucide-react'
-import { useMemo, useState, type FormEvent } from 'react'
+import { CalendarPlus, Copy, Plus, Trash2 } from 'lucide-react'
+import { format, parseISO } from 'date-fns'
+import { fr } from 'date-fns/locale'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Placer, type BaseSeance } from '../../components/progressions/Placer'
+import { RondStatut, STATUTS_PROG, STATUT_SUIVANT } from '../../components/progressions/RondStatut'
 import {
-  Bascule, Bouton, BoutonIcone, Champ, ChoixMatiere, Chargement, Entete, Feuille, Liste, Onglets, PastilleMatiere,
+  Bouton, BoutonIcone, Champ, ChoixMatiere, Chargement, Entete, Feuille, Onglets, PastilleMatiere,
   Saisie, Vide, useConfirmation, useToast,
 } from '../../components/ui'
 import { useEcrire, useProgressions } from '../../lib/donnees'
-import { aujourdhui, decaler, fmtJourCourt, lundiDe, iso, periodeCourante, semaineDansPeriode } from '../../lib/dates'
+import { aujourdhui, decaler, lundiDe, iso, periodeCourante, semaineDansPeriode } from '../../lib/dates'
 import { MATIERES, matiere } from '../../lib/matieres'
 import { useClasse } from '../../lib/session'
 import type { Periode, Progression } from '../../lib/types'
-
-const STATUTS = {
-  prevu: { icone: Circle, label: 'Prévu', couleur: 'text-brume' },
-  en_cours: { icone: CircleDot, label: 'En cours', couleur: 'text-ambre' },
-  fait: { icone: CircleCheck, label: 'Fait', couleur: 'text-succes' },
-} as const
-const SUIVANT: Record<Progression['statut'], Progression['statut']> = { prevu: 'en_cours', en_cours: 'fait', fait: 'prevu' }
 
 function nbSemaines(p: Periode | undefined) {
   return p ? semaineDansPeriode(p.fin, p) ?? 7 : 7
@@ -25,6 +21,11 @@ function nbSemaines(p: Periode | undefined) {
 function lundiSemaine(p: Periode, s: number) {
   return decaler(iso(lundiDe(new Date(p.debut + 'T12:00:00'))), (s - 1) * 7)
 }
+const dateCourte = (s: string) => format(parseISO(s), 'd MMM', { locale: fr })
+/** « Lire l'heure (semaine 3) » → « Lire l'heure » : le numéro est déjà la colonne */
+const titreCourt = (t: string) => t.replace(/\s*\(semaine\s*\d+\)\s*$/i, '')
+
+type Edition = Partial<Progression>
 
 export default function Progressions() {
   const classe = useClasse()
@@ -38,9 +39,10 @@ export default function Progressions() {
   const toast = useToast()
   const { demander, fenetre } = useConfirmation()
 
-  const [edition, setEdition] = useState<Partial<Progression> | null>(null)
+  const [edition, setEdition] = useState<Edition | null>(null)
   const [copie, setCopie] = useState(false)
   const [placer, setPlacer] = useState<{ base: BaseSeance; id: string; statut: Progression['statut'] } | null>(null)
+  const [matiereMobile, setMatiereMobile] = useState<string | null>(null)
 
   const parMatiere = useMemo(() => {
     const g = new Map<string, Progression[]>()
@@ -53,23 +55,22 @@ export default function Progressions() {
     return [...g.entries()].sort((a, b) => ordre.indexOf(a[0]) - ordre.indexOf(b[0]))
   }, [q.data])
 
+  useEffect(() => {
+    if (!parMatiere.length) return
+    if (!matiereMobile || !parMatiere.some(([m]) => m === matiereMobile)) setMatiereMobile(parMatiere[0][0])
+  }, [parMatiere, matiereMobile])
+
   const semaines = Array.from({ length: nbSemaines(periode) }, (_, i) => i + 1)
+  const avecSansSemaine = (q.data ?? []).some((i) => i.semaine == null)
+  const colonnes: (number | null)[] = [...semaines, ...(avecSansSemaine ? [null] : [])]
 
   async function basculer(it: Progression) {
-    try { await ecrire.mutateAsync({ op: 'update', table: 'progressions', id: it.id, patch: { statut: SUIVANT[it.statut] } }) }
+    try { await ecrire.mutateAsync({ op: 'update', table: 'progressions', id: it.id, patch: { statut: STATUT_SUIVANT[it.statut] } }) }
     catch (e) { toast((e as Error).message, 'erreur') }
   }
 
-  async function ajouterRapide(m: string, titre: string, semaine: number | null) {
-    const liste = parMatiere.find(([id]) => id === m)?.[1] ?? []
-    await ecrire.mutateAsync({
-      op: 'insert', table: 'progressions',
-      ligne: { classe_id: classe.id, matiere: m, periode: periodeId, semaine, titre, ordre: liste.length + 1 },
-    })
-  }
-
-  async function enregistrer(e: FormEvent) {
-    e.preventDefault()
+  async function enregistrer(e?: FormEvent) {
+    e?.preventDefault()
     if (!edition?.titre?.trim() || !edition.matiere) return
     const ligne = {
       matiere: edition.matiere, titre: edition.titre.trim(), semaine: edition.semaine ?? null,
@@ -77,68 +78,164 @@ export default function Progressions() {
     }
     try {
       if (edition.id) await ecrire.mutateAsync({ op: 'update', table: 'progressions', id: edition.id, patch: ligne })
-      else await ecrire.mutateAsync({ op: 'insert', table: 'progressions', ligne: { ...ligne, classe_id: classe.id, ordre: 99 } })
+      else {
+        const ordre = (parMatiere.find(([m]) => m === edition.matiere)?.[1].length ?? 0) + 1
+        await ecrire.mutateAsync({ op: 'insert', table: 'progressions', ligne: { ...ligne, classe_id: classe.id, ordre } })
+      }
       setEdition(null)
     } catch (err) { toast((err as Error).message, 'erreur') }
   }
+
+  const nouveau = (m?: string, s?: number | null) =>
+    setEdition({ matiere: m ?? matiereMobile ?? 'francais', semaine: s === undefined ? semaineActuelle ?? 1 : s, statut: 'prevu' })
+
+  const carte = (it: Progression) => {
+    const mat = matiere(it.matiere)
+    return (
+      <div key={it.id} className="flex items-start gap-1.5 rounded-xl p-1.5" style={{ background: mat.fond }}>
+        <button type="button" onClick={() => basculer(it)} className="mt-px rounded-full p-0.5" title={`${STATUTS_PROG[it.statut].label} → ${STATUTS_PROG[STATUT_SUIVANT[it.statut]].label}`} aria-label={`Statut : ${STATUTS_PROG[it.statut].label}`}>
+          <RondStatut statut={it.statut} couleur={mat.couleur} />
+        </button>
+        <button type="button" onClick={() => setEdition(it)} title={it.titre}
+          className={clsx('min-w-0 flex-1 text-left text-xs font-bold leading-snug text-encre', it.statut === 'fait' && 'opacity-50')}>
+          <span className="line-clamp-3">{titreCourt(it.titre)}</span>
+        </button>
+      </div>
+    )
+  }
+
+  const cellule = (m: string, items: Progression[], s: number | null) => {
+    const l = items.filter((i) => (i.semaine ?? null) === s)
+    return (
+      <div className={clsx('group flex min-h-[3.25rem] flex-col gap-1.5 border-l border-trait p-1.5', s != null && s === semaineActuelle && 'bg-ambre-clair/60')}>
+        {l.map(carte)}
+        <button type="button" onClick={() => nouveau(m, s)} aria-label="Ajouter" title="Ajouter"
+          className="flex h-6 items-center justify-center rounded-lg text-brume/60 transition hover:bg-encre/5 hover:text-encre sm:opacity-0 sm:group-hover:opacity-100">
+          <Plus className="size-4" />
+        </button>
+      </div>
+    )
+  }
+
+  const itemsMobile = parMatiere.find(([m]) => m === matiereMobile)?.[1] ?? []
 
   return (
     <div>
       <Entete
         titre="Progressions"
-        sousTitre={semaineActuelle ? `Semaine ${semaineActuelle} sur ${semaines.length}` : periode ? `${fmtJourCourt(periode.debut)} → ${fmtJourCourt(periode.fin)}` : undefined}
         actions={<>
+          <Onglets valeur={periodeId} onChange={setPeriodeId} options={periodes.map((p) => ({ id: p.id, label: p.id }))} />
           <BoutonIcone icone={Copy} label="Copier vers une autre période" variante="secondaire" onClick={() => setCopie(true)} disabled={!q.data?.length} />
-          <Bouton icone={Plus} onClick={() => setEdition({ matiere: 'francais', semaine: semaineActuelle ?? 1, statut: 'prevu' })}>Ajouter</Bouton>
+          <BoutonIcone icone={Plus} label="Ajouter" variante="primaire" onClick={() => nouveau()} />
         </>}
       />
-      <div className="mb-5">
-        <Onglets valeur={periodeId} onChange={setPeriodeId} options={periodes.map((p) => ({ id: p.id, label: p.id }))} />
-      </div>
 
       {q.isLoading ? <Chargement /> : !parMatiere.length ? (
-        <Vide icone={Plus} texte="Aucune progression pour cette période."
-          action={<Bouton icone={Plus} onClick={() => setEdition({ matiere: 'francais', semaine: 1, statut: 'prevu' })}>Ajouter</Bouton>} />
+        <Vide icone={Plus} texte="Vide" action={<Bouton icone={Plus} onClick={() => nouveau('francais', 1)}>Ajouter</Bouton>} />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {parMatiere.map(([m, items]) => (
-            <Section key={m} m={m} items={items} semaines={semaines} semaineActuelle={semaineActuelle} periode={periode}
-              onBasculer={basculer}
-              onModifier={(it) => setEdition(it)}
-              onPlacer={(it) => setPlacer({ base: { titre: it.titre, matiere: it.matiere, progression_id: it.id }, id: it.id, statut: it.statut })}
-              onAjouter={(titre, s) => ajouterRapide(m, titre, s)}
-            />
-          ))}
-        </div>
+        <>
+          {/* Ordinateur : tableau matières × semaines */}
+          <div className="hidden overflow-x-auto rounded-3xl bg-white p-2 shadow-doux md:block">
+            <div className="grid" style={{ gridTemplateColumns: `3.5rem repeat(${colonnes.length}, minmax(8.5rem, 1fr))`, minWidth: `${3.5 + colonnes.length * 8.5}rem` }}>
+              <div />
+              {colonnes.map((s) => (
+                <div key={String(s)} className={clsx('flex flex-col items-center rounded-t-2xl py-2 leading-none', s != null && s === semaineActuelle && 'bg-ambre-clair/60')}>
+                  <span className={clsx('rounded-full px-2.5 py-1 font-titre text-base font-semibold', s != null && s === semaineActuelle ? 'bg-ambre text-white' : 'text-encre')}>{s != null ? `S${s}` : '—'}</span>
+                  {s != null && periode && <span className="mt-1 text-[11px] font-bold text-brume">{dateCourte(lundiSemaine(periode, s))}</span>}
+                </div>
+              ))}
+              {parMatiere.map(([m, items]) => (
+                <div key={m} className="contents">
+                  <div className="flex items-start justify-center border-t border-trait pt-2" title={matiere(m).nom}>
+                    <PastilleMatiere id={m} />
+                  </div>
+                  {colonnes.map((s) => <div key={String(s)} className="border-t border-trait">{cellule(m, items, s)}</div>)}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Téléphone : une matière à la fois, ses semaines en cartes */}
+          <div className="md:hidden">
+            <div className="-mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1" role="tablist">
+              {parMatiere.map(([m, items]) => {
+                const mat = matiere(m)
+                const I = mat.icone
+                const actif = m === matiereMobile
+                return (
+                  <button key={m} type="button" role="tab" aria-selected={actif} onClick={() => setMatiereMobile(m)} title={mat.nom}
+                    className={clsx('relative flex size-12 shrink-0 items-center justify-center rounded-2xl transition', actif ? 'ring-[3px] ring-encre' : '')}
+                    style={{ background: mat.fond, color: mat.couleur }}>
+                    <I className="size-6" />
+                    <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-white px-1 text-center text-[10px] font-bold leading-5 text-encre shadow-sm">
+                      {items.filter((i) => i.statut === 'fait').length}/{items.length}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+            <div className="flex flex-col gap-2">
+              {colonnes.map((s) => {
+                const l = itemsMobile.filter((i) => (i.semaine ?? null) === s)
+                const actuelle = s != null && s === semaineActuelle
+                return (
+                  <div key={String(s)} className={clsx('flex gap-2 rounded-3xl p-2', actuelle ? 'bg-ambre-clair' : 'bg-white shadow-doux')}>
+                    <span className={clsx('flex w-11 shrink-0 flex-col items-center justify-center rounded-2xl py-1 leading-none', actuelle ? 'bg-ambre text-white' : 'bg-papier text-encre')}>
+                      <span className="font-titre text-base font-semibold">{s != null ? `S${s}` : '—'}</span>
+                      {s != null && periode && <span className="mt-0.5 text-[10px] font-bold opacity-80">{format(parseISO(lundiSemaine(periode, s)), 'd/MM')}</span>}
+                    </span>
+                    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                      {l.map(carte)}
+                      {!l.length && <span className="flex-1" />}
+                    </div>
+                    <BoutonIcone icone={Plus} label="Ajouter" className="size-8 self-center text-brume" onClick={() => nouveau(matiereMobile ?? undefined, s)} />
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </>
       )}
 
-      <Feuille ouverte={!!edition} onFermer={() => setEdition(null)} titre={edition?.id ? 'Modifier' : 'Ajouter à la progression'}
+      <Feuille ouverte={!!edition} onFermer={() => setEdition(null)} titre={edition?.id ? '' : <Plus className="size-5 text-bateau" />}
         pied={<>
           {edition?.id && (
-            <BoutonIcone icone={Trash2} label="Supprimer" className="mr-auto text-alerte"
-              onClick={() => { const it = edition; demander(`Supprimer « ${it.titre} » ?`, () => { ecrire.mutate({ op: 'delete', table: 'progressions', id: it.id! }); setEdition(null) }) }} />
+            <>
+              <BoutonIcone icone={Trash2} label="Supprimer" className="text-alerte"
+                onClick={() => { const it = edition; demander(`Supprimer « ${it.titre} » ?`, () => { ecrire.mutate({ op: 'delete', table: 'progressions', id: it.id! }); setEdition(null) }) }} />
+              <BoutonIcone icone={CalendarPlus} label="Placer dans le cahier journal" variante="secondaire" className="mr-auto"
+                onClick={() => { const it = edition as Progression; setEdition(null); setPlacer({ base: { titre: it.titre, matiere: it.matiere, progression_id: it.id }, id: it.id, statut: it.statut }) }} />
+            </>
           )}
           <Bouton type="submit" form="form-prog" enCours={ecrire.isPending}>Enregistrer</Bouton>
         </>}>
         <form id="form-prog" onSubmit={enregistrer} className="flex flex-col gap-4">
           <ChoixMatiere valeur={edition?.matiere ?? null} onChange={(id) => setEdition((e) => ({ ...e, matiere: id }))} />
           <Champ label="Titre">{(id) => <Saisie id={id} required autoFocus value={edition?.titre ?? ''} onChange={(e) => setEdition((x) => ({ ...x, titre: e.target.value }))} />}</Champ>
-          <div className="grid grid-cols-2 gap-3">
-            <Champ label="Semaine">
-              {(id) => (
-                <Liste id={id} value={edition?.semaine ?? ''} onChange={(e) => setEdition((x) => ({ ...x, semaine: e.target.value ? Number(e.target.value) : null }))}>
-                  <option value="">—</option>
-                  {semaines.map((s) => <option key={s} value={s}>Semaine {s}{periode ? ` · ${fmtJourCourt(lundiSemaine(periode, s))}` : ''}</option>)}
-                </Liste>
-              )}
-            </Champ>
-            <Champ label="Statut">
-              {(id) => (
-                <Liste id={id} value={edition?.statut ?? 'prevu'} onChange={(e) => setEdition((x) => ({ ...x, statut: e.target.value as Progression['statut'] }))}>
-                  {Object.entries(STATUTS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                </Liste>
-              )}
-            </Champ>
+          <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Semaine">
+            {[...semaines, null].map((s) => {
+              const actif = (edition?.semaine ?? null) === s
+              return (
+                <button key={String(s)} type="button" role="radio" aria-checked={actif} onClick={() => setEdition((x) => ({ ...x, semaine: s }))}
+                  title={s != null && periode ? `Semaine du ${dateCourte(lundiSemaine(periode, s))}` : 'Sans semaine'}
+                  className={clsx('h-9 min-w-11 rounded-full px-3 text-sm font-bold transition', actif ? 'bg-encre text-white' : 'border border-trait bg-white text-encre',
+                    s != null && s === semaineActuelle && !actif && 'border-ambre')}>
+                  {s != null ? `S${s}` : '—'}
+                </button>
+              )
+            })}
+          </div>
+          <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Statut">
+            {(Object.keys(STATUTS_PROG) as Progression['statut'][]).map((st) => {
+              const actif = (edition?.statut ?? 'prevu') === st
+              const c = matiere(edition?.matiere).couleur
+              return (
+                <button key={st} type="button" role="radio" aria-checked={actif} onClick={() => setEdition((x) => ({ ...x, statut: st }))}
+                  className={clsx('inline-flex h-9 items-center gap-2 rounded-full px-3 text-sm font-bold transition', actif ? 'bg-encre text-white' : 'border border-trait bg-white text-encre')}>
+                  <RondStatut statut={st} couleur={actif ? '#fff' : c} taille={16} /> {STATUTS_PROG[st].label}
+                </button>
+              )
+            })}
           </div>
         </form>
       </Feuille>
@@ -148,77 +245,6 @@ export default function Progressions() {
       <Placer base={placer?.base ?? null} onFermer={() => setPlacer(null)} marquerEnCours={placer && placer.statut === 'prevu' ? placer.id : null} />
       {fenetre}
     </div>
-  )
-}
-
-function Section({ m, items, semaines, semaineActuelle, periode, onBasculer, onModifier, onPlacer, onAjouter }: {
-  m: string; items: Progression[]; semaines: number[]; semaineActuelle: number | null; periode?: Periode
-  onBasculer: (it: Progression) => void; onModifier: (it: Progression) => void
-  onPlacer: (it: Progression) => void; onAjouter: (titre: string, semaine: number | null) => Promise<void>
-}) {
-  const mat = matiere(m)
-  const faits = items.filter((i) => i.statut === 'fait').length
-  const [titre, setTitre] = useState('')
-  const [semaine, setSemaine] = useState<number | null>(semaineActuelle)
-  const [enCours, setEnCours] = useState(false)
-
-  async function ajouter(e: FormEvent) {
-    e.preventDefault()
-    if (!titre.trim()) return
-    setEnCours(true)
-    try { await onAjouter(titre.trim(), semaine); setTitre('') } finally { setEnCours(false) }
-  }
-
-  return (
-    <section className="flex flex-col rounded-3xl bg-white p-4 shadow-doux">
-      <div className="mb-3 flex items-center gap-3">
-        <PastilleMatiere id={m} />
-        <h2 className="min-w-0 flex-1 truncate font-titre text-lg font-semibold">{mat.nom}</h2>
-        <span className="text-sm font-bold tabular-nums text-brume">{faits}/{items.length}</span>
-      </div>
-      <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-encre/5">
-        <div className="h-full rounded-full" style={{ width: `${items.length ? (faits / items.length) * 100 : 0}%`, background: mat.couleur }} />
-      </div>
-      <ul className="flex flex-col">
-        {items.map((it) => {
-          const S = STATUTS[it.statut]
-          const actuelle = it.semaine != null && it.semaine === semaineActuelle
-          return (
-            <li key={it.id} className={clsx('group flex items-center gap-2 rounded-2xl px-1 py-1', actuelle && 'bg-ambre-clair/70')}>
-              <button onClick={() => onBasculer(it)} className={clsx('shrink-0 rounded-full p-1', S.couleur)} aria-label={`${S.label} — changer`} title={S.label}>
-                <S.icone className="size-5" strokeWidth={2.4} />
-              </button>
-              <span
-                className={clsx('w-9 shrink-0 rounded-full py-0.5 text-center text-xs font-bold tabular-nums',
-                  actuelle ? 'bg-ambre text-white' : 'bg-encre/5 text-brume')}
-                title={it.semaine && periode ? `Semaine du ${fmtJourCourt(lundiSemaine(periode, it.semaine))}` : undefined}
-              >
-                {it.semaine ? `S${it.semaine}` : '—'}
-              </span>
-              <button onClick={() => onModifier(it)} title="Modifier"
-                className={clsx('min-w-0 flex-1 rounded-lg py-0.5 text-left text-sm leading-snug hover:text-bateau', it.statut === 'fait' && 'text-brume line-through decoration-brume/40')}>
-                {it.titre}
-              </button>
-              <BoutonIcone icone={CalendarPlus} label="Placer dans le cahier journal" onClick={() => onPlacer(it)} className="size-8 text-brume" />
-            </li>
-          )
-        })}
-      </ul>
-      <form onSubmit={ajouter} className="mt-3 flex items-center gap-2 border-t border-trait pt-3">
-        <select
-          value={semaine ?? ''}
-          onChange={(e) => setSemaine(e.target.value ? Number(e.target.value) : null)}
-          aria-label="Semaine"
-          className="h-9 shrink-0 rounded-full border border-trait bg-papier px-2 text-xs font-bold text-brume"
-        >
-          <option value="">—</option>
-          {semaines.map((s) => <option key={s} value={s}>S{s}</option>)}
-        </select>
-        <input value={titre} onChange={(e) => setTitre(e.target.value)} placeholder="Ajouter…" aria-label={`Ajouter en ${mat.court}`}
-          className="h-9 min-w-0 flex-1 rounded-full border border-trait bg-papier px-3 text-sm focus:border-bateau focus:outline-none" />
-        <BoutonIcone icone={Plus} label="Ajouter" type="submit" variante="doux" className="size-9" disabled={enCours || !titre.trim()} />
-      </form>
-    </section>
   )
 }
 
@@ -246,17 +272,26 @@ function CopierPeriode({ ouverte, onFermer, depuis, periodes, items }: {
   }
 
   return (
-    <Feuille ouverte={ouverte} onFermer={onFermer} titre={`Copier ${depuis} vers…`}
+    <Feuille ouverte={ouverte} onFermer={onFermer} titre={<span className="inline-flex items-center gap-2"><Copy className="size-5 text-bateau" /> {depuis} →</span>}
       pied={<Bouton icone={Copy} onClick={copier} enCours={ecrire.isPending} disabled={!vers}>Copier</Bouton>}>
       <div className="flex flex-col gap-4">
         <Onglets valeur={vers} onChange={setVers} options={autres.map((p) => ({ id: p.id, label: p.id }))} />
-        <div className="flex flex-col gap-3">
-          {matieres.map((m) => (
-            <Bascule key={m} actif={!exclues.includes(m)} label={matiere(m).nom}
-              onChange={(v) => setExclues((x) => (v ? x.filter((y) => y !== m) : [...x, m]))} />
-          ))}
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {matieres.map((m) => {
+            const mat = matiere(m)
+            const I = mat.icone
+            const actif = !exclues.includes(m)
+            return (
+              <button key={m} type="button" aria-pressed={actif} onClick={() => setExclues((x) => (actif ? [...x, m] : x.filter((y) => y !== m)))}
+                className={clsx('flex items-center gap-2 rounded-2xl p-2 text-left text-sm font-bold transition', actif ? 'ring-2 ring-encre' : 'opacity-40')}
+                style={{ background: mat.fond, color: mat.couleur }}>
+                <I className="size-5" /> <span className="truncate text-encre">{mat.court}</span>
+              </button>
+            )
+          })}
         </div>
       </div>
     </Feuille>
   )
 }
+

@@ -2,13 +2,16 @@
 import clsx from 'clsx'
 import { useMemo, useState } from 'react'
 import { Coquille } from './ia/Coquille'
-import { Badge, Bascule, EtiquetteMatiere, PastilleMatiere } from './ui'
+import { Bascule } from './ui'
+import { Clock, Replace, Users } from 'lucide-react'
+import { matiere } from '../lib/matieres'
+import { typeDevoir } from './devoirs/devoirsOutils'
 import {
   useAgenda, useDevoirsDonnes, useEcrire, useEdt, useEleves, useEtapes, useEvaluations, useLsu, useProgressions,
   useSeances, useSequences,
 } from '../lib/donnees'
 import {
-  decaler, estJourClasse, fmtHeure, fmtJour, fmtJourCourt, joursSemaine, periodeDe, periodeCourante, semaineDansPeriode,
+  decaler, estJourClasse, fmtHeure, fmtJourCourt, joursSemaine, maj1, periodeDe, periodeCourante, semaineDansPeriode,
 } from '../lib/dates'
 import {
   codesEleves, extraireJson as extraire, lireAppreciations, lireEtapes, lireJournal, promptAppreciations, promptJournal, promptSequence,
@@ -53,7 +56,7 @@ function JournalIA({ demande, onFermer }: { demande: { type: 'journee'; date: st
   const [remplacer, setRemplacer] = useState(false)
 
   const pret = !!(edt.data && progs.data && seancesJours.data && seancesAvant.data && devoirs.data && agenda.data)
-  const titre = demande.type === 'journee' ? `Préparer ${fmtJour(demande.date)}` : `Préparer la semaine du ${fmtJourCourt(debut)}`
+  const titre = demande.type === 'journee' ? maj1(fmtJourCourt(demande.date)) : `${maj1(fmtJourCourt(debut))} → ${fmtJourCourt(fin)}`
 
   const conflits = (s: SeanceIA) => (seancesJours.data ?? []).filter((x) => x.date === s.date && x.debut?.slice(0, 5) === s.debut.slice(0, 5))
   const devoirExiste = (d: DevoirIA) => (devoirs.data ?? []).some((x) => x.pour_le === d.pour_le && x.texte.trim().toLowerCase() === d.texte.toLowerCase())
@@ -62,7 +65,7 @@ function JournalIA({ demande, onFermer }: { demande: { type: 'journee'; date: st
     return (
       <Coquille titre={titre} pret construire={() => ''} analyser={() => { throw new Error('Pas de jour de classe sur cette période.') }}
         apercu={() => null} importer={async () => ''} onFermer={onFermer}
-        options={<p className="rounded-2xl bg-ambre-clair px-4 py-3 text-sm font-bold text-ambre-fonce">Pas de jour de classe sur cette période.</p>} />
+        options={<p className="rounded-2xl bg-ambre-clair px-4 py-3 text-sm font-bold text-ambre-fonce">Pas classe</p>} />
     )
   }
 
@@ -71,7 +74,7 @@ function JournalIA({ demande, onFermer }: { demande: { type: 'journee'; date: st
       titre={titre}
       pret={pret}
       onFermer={onFermer}
-      options={<Bascule actif={remplacer} onChange={setRemplacer} label="Remplacer ce qui est déjà prévu" />}
+      options={<Bascule actif={remplacer} onChange={setRemplacer} label="Remplacer l'existant" />}
       construire={(precisions) => promptJournal({
         classe, jours, periodeId: periode?.id ?? null, semaine, edt: edt.data ?? [], progressions: progs.data ?? [],
         seancesAvant: seancesAvant.data ?? [], seancesJours: seancesJours.data ?? [], devoirs: devoirs.data ?? [],
@@ -80,45 +83,54 @@ function JournalIA({ demande, onFermer }: { demande: { type: 'journee'; date: st
       analyser={(t) => lireJournal(extraire(t), jours)}
       apercu={(lu) => (
         <div className="flex flex-col gap-4">
-          {jours.map((j) => {
-            const liste = lu.seances.filter((s) => s.date === j)
-            if (!liste.length) return null
-            return (
-              <div key={j}>
-                <p className="mb-1.5 font-bold first-letter:uppercase">{fmtJour(j)}</p>
-                <ul className="flex flex-col gap-1">
+          <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(auto-fill, minmax(min(100%, ${jours.length > 1 ? '13rem' : '20rem'}), 1fr))` }}>
+            {jours.map((j) => {
+              const liste = lu.seances.filter((s) => s.date === j)
+              if (!liste.length) return null
+              return (
+                <div key={j} className="flex flex-col gap-1.5">
+                  <span className="self-start rounded-full bg-encre px-3 py-1 text-xs font-bold text-white">{maj1(fmtJourCourt(j))}</span>
                   {liste.map((s, i) => {
                     const c = conflits(s)
+                    const m = matiere(s.matiere)
+                    const I = m.icone
                     return (
-                      <li key={i} className={clsx('flex items-center gap-2 rounded-xl px-2 py-1', c.length && !remplacer && 'opacity-50')}>
-                        <span className="w-11 shrink-0 text-sm font-bold tabular-nums text-brume">{fmtHeure(s.debut)}</span>
-                        <PastilleMatiere id={s.matiere} taille="s" />
-                        <span className="min-w-0 flex-1 text-sm">{s.titre}</span>
-                        {c.length > 0 && <Badge couleur={remplacer ? 'ambre' : 'brume'}>{remplacer ? 'Remplace' : 'Déjà prévu'}</Badge>}
-                      </li>
+                      <div key={i} className={clsx('flex items-center gap-2 rounded-2xl p-1.5', c.length && !remplacer && 'opacity-40')} style={{ background: m.fond }}
+                        title={c.length ? (remplacer ? 'Remplace la séance prévue' : 'Créneau déjà rempli : ignorée') : undefined}>
+                        <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white" style={{ color: m.couleur }}><I className="size-4" /></span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-[11px] font-bold tabular-nums" style={{ color: m.couleur }}>{fmtHeure(s.debut)}</span>
+                          <span className="block truncate text-sm font-bold text-encre">{s.titre}</span>
+                        </span>
+                        {c.length > 0 && (remplacer ? <Replace className="size-4 shrink-0 text-ambre-fonce" /> : <Clock className="size-4 shrink-0 text-brume" />)}
+                      </div>
                     )
                   })}
-                </ul>
-              </div>
-            )
-          })}
+                </div>
+              )
+            })}
+          </div>
           {lu.devoirs.length > 0 && (
-            <div>
-              <p className="mb-1.5 font-bold">Devoirs</p>
-              <ul className="flex flex-col gap-1">
-                {lu.devoirs.map((d, i) => (
-                  <li key={i} className={clsx('flex flex-wrap items-center gap-2 text-sm', devoirExiste(d) && 'opacity-50')}>
-                    <EtiquetteMatiere id={d.matiere} />
-                    <span className="min-w-0 flex-1">{d.texte}</span>
-                    <span className="text-xs font-bold text-brume">pour {fmtJourCourt(d.pour_le)}</span>
-                    {d.type === 'evaluation' && <Badge couleur="alerte">Évaluation</Badge>}
-                    {devoirExiste(d) && <Badge couleur="brume">Déjà prévu</Badge>}
-                  </li>
-                ))}
-              </ul>
+            <div className="grid gap-1.5 sm:grid-cols-2">
+              {lu.devoirs.map((d, i) => {
+                const m = matiere(d.matiere)
+                const I = m.icone
+                const t = typeDevoir(d.type)
+                const TI = t.icone
+                return (
+                  <div key={i} className={clsx('flex items-center gap-2 rounded-2xl p-1.5', d.type === 'evaluation' && 'ring-2 ring-alerte', devoirExiste(d) && 'opacity-40')} style={{ background: m.fond }}>
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-white" style={{ color: m.couleur }}><I className="size-4" /></span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-bold leading-snug text-encre">{d.texte}</span>
+                      <span className="block text-[11px] font-bold" style={{ color: m.couleur }}>→ {fmtJourCourt(d.pour_le)}</span>
+                    </span>
+                    {d.type !== 'travail' && <TI className="size-4 shrink-0" style={{ color: t.couleur }} />}
+                  </div>
+                )
+              })}
             </div>
           )}
-          {lu.erreurs.length > 0 && <p className="text-xs text-brume">{lu.erreurs.length} élément(s) ignoré(s).</p>}
+          {lu.erreurs.length > 0 && <p className="text-xs font-bold text-brume">{lu.erreurs.length} ignoré(s)</p>}
         </div>
       )}
       importer={async (lu) => {
@@ -155,27 +167,30 @@ function SequenceIA({ sequenceId, onFermer }: { sequenceId: string; onFermer: ()
 
   return (
     <Coquille<EtapeIA[]>
-      titre={sequence ? `Écrire les séances : ${sequence.titre}` : 'Écrire les séances'}
+      titre={sequence?.titre ?? ''}
       pret={pret}
       onFermer={onFermer}
-      options={etapes.data?.length ? <Bascule actif={remplacer} onChange={setRemplacer} label="Remplacer les séances déjà écrites" /> : undefined}
+      options={etapes.data?.length ? <Bascule actif={remplacer} onChange={setRemplacer} label="Remplacer l'existant" /> : undefined}
       construire={(precisions) => promptSequence({ classe, sequence: sequence!, etapes: etapes.data ?? [], progressions: progs.data ?? [], remplacer, precisions })}
       analyser={(t) => lireEtapes(extraire(t))}
-      apercu={(lu) => (
-        <ol className="flex flex-col gap-2">
-          {lu.map((e, i) => (
-            <li key={i} className="flex gap-3">
-              <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-bateau-clair text-sm font-bold text-bateau">
-                {(remplacer ? 0 : etapes.data?.length ?? 0) + i + 1}
-              </span>
-              <div className="min-w-0">
-                <p className="font-bold">{e.titre}{e.duree ? <span className="font-normal text-brume"> · {e.duree} min</span> : null}</p>
-                {e.objectif && <p className="text-sm text-brume">{e.objectif}</p>}
-              </div>
-            </li>
-          ))}
-        </ol>
-      )}
+      apercu={(lu) => {
+        const m = matiere(sequence?.matiere)
+        return (
+          <ol className="grid gap-2 sm:grid-cols-2">
+            {lu.map((e, i) => (
+              <li key={i} className="flex items-center gap-3 rounded-2xl p-2" style={{ background: m.fond }}>
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white font-titre text-lg font-semibold" style={{ color: m.couleur }}>
+                  {(remplacer ? 0 : etapes.data?.length ?? 0) + i + 1}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-bold leading-snug text-encre">{e.titre}</span>
+                  {e.duree ? <span className="inline-flex items-center gap-1 text-xs font-bold" style={{ color: m.couleur }}><Clock className="size-3.5" />{e.duree} min</span> : null}
+                </span>
+              </li>
+            ))}
+          </ol>
+        )
+      }}
       importer={async (lu) => {
         const existantes = etapes.data ?? []
         const ecritures: any[] = []
@@ -208,27 +223,30 @@ function AppreciationsIA({ bilan, eleveIds, onFermer }: { bilan: string; eleveId
   const codes = useMemo(() => codesEleves(choisis), [choisis])
   const evalsBilan = (evals.data ?? []).filter((e) => !def || (e.date >= def.debut && e.date <= def.fin))
   const pret = !!(eleves.data && evals.data && lsu.data)
-  const nomMatiere = (k: string) => LSU.find((m) => m.id === k)?.nom ?? k
+  const nomMatiere = (k: string) => (LSU.find((m) => m.id === k)?.nom ?? k).replace(/\s*\(.*\)$/, '')
 
   return (
     <Coquille<AppreciationIA[]>
-      titre={`Appréciations · ${def?.nom ?? bilan}`}
+      titre={def?.nom ?? bilan}
       pret={pret}
       onFermer={onFermer}
-      options={<p className="text-sm text-brume">{choisis.length} élève(s) · les prénoms ne sont pas envoyés</p>}
+      options={<p className="inline-flex items-center gap-2 text-sm font-bold text-brume"><Users className="size-4" />{choisis.length} · prénoms non envoyés</p>}
       construire={(precisions) => promptAppreciations({ classe, bilanNom: def?.nom ?? bilan, codes, evaluations: evalsBilan, bilans: lsu.data ?? [], precisions })}
       analyser={(t) => lireAppreciations(extraire(t), codes)}
       apercu={(lu) => (
-        <ul className="flex flex-col gap-3">
+        <ul className="grid gap-3 md:grid-cols-2">
           {lu.map((a) => {
             const e = choisis.find((x) => x.id === a.eleve_id)
             return (
-              <li key={a.eleve_id} className="rounded-2xl bg-papier p-3">
-                <p className="font-bold">{e?.prenom}</p>
+              <li key={a.eleve_id} className="flex flex-col gap-2 rounded-3xl bg-white p-3 shadow-sm">
+                <span className="flex items-center gap-2">
+                  <span className="flex size-9 items-center justify-center rounded-xl bg-bateau font-titre text-white">{e?.prenom.slice(0, 1)}</span>
+                  <span className="font-bold">{e?.prenom}</span>
+                </span>
                 {Object.entries(a.appreciations).map(([k, v]) => (
-                  <p key={k} className="mt-1 text-sm"><span className="font-bold text-brume">{nomMatiere(k)} · </span>{v}</p>
+                  <p key={k} className="text-sm leading-snug"><span className="mr-1 rounded-full bg-encre/5 px-2 text-[11px] font-bold text-brume">{nomMatiere(k)}</span>{v}</p>
                 ))}
-                {a.appreciation_generale && <p className="mt-1 text-sm"><span className="font-bold text-brume">Générale · </span>{a.appreciation_generale}</p>}
+                {a.appreciation_generale && <p className="rounded-2xl bg-bateau-clair p-2 text-sm leading-snug">{a.appreciation_generale}</p>}
               </li>
             )
           })}

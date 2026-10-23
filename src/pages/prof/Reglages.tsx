@@ -1,10 +1,9 @@
 import clsx from 'clsx'
-import { Check, Copy, KeyRound, Plus, RotateCcw, Save, Trash2, type LucideIcon } from 'lucide-react'
+import { CalendarCheck, CalendarRange, Check, Clock, Copy, Flag, GraduationCap, KeyRound, Plus, RotateCcw, Save, School, Send, Sun, Trash2, type LucideIcon } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { bilansDepuisPeriodes } from '../../components/reglages/bilans'
 import { Bascule, Bouton, BoutonIcone, Champ, Entete, Onglets, Saisie, useToast } from '../../components/ui'
 import { useEcrire } from '../../lib/donnees'
-import { fmtJourCourt } from '../../lib/dates'
 import { db } from '../../lib/supabase'
 import { useClasse, useSession } from '../../lib/session'
 import type { BilanLsu, Classe, Periode, Reglages as R, Vacances } from '../../lib/types'
@@ -14,12 +13,16 @@ const JOURS = [
 ]
 type Rythme = 'trimestre' | 'semestre' | 'periode'
 
-function Bloc({ titre, children, actions }: { titre: string; children: ReactNode; actions?: ReactNode }) {
+/** Carte de réglage : bulle d'icône colorée + un mot */
+function Bloc({ titre, icone: Icone, couleur, fond, children, actions, className }: {
+  titre: string; icone: LucideIcon; couleur: string; fond: string; children: ReactNode; actions?: ReactNode; className?: string
+}) {
   return (
-    <section className="rounded-3xl bg-white p-4 shadow-doux sm:p-5">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="font-titre text-lg font-semibold">{titre}</h2>
-        {actions}
+    <section className={clsx('rounded-3xl bg-white p-4 shadow-doux sm:p-5', className)} aria-label={titre}>
+      <div className="mb-4 flex items-center gap-3">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl" style={{ background: fond, color: couleur }}><Icone className="size-6" /></span>
+        <span className="font-titre text-lg font-semibold" style={{ color: couleur }}>{titre}</span>
+        <span className="ml-auto">{actions}</span>
       </div>
       {children}
     </section>
@@ -83,21 +86,21 @@ export default function Reglages() {
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-5xl">
       <Entete titre="Réglages" actions={<Bouton icone={Save} onClick={enregistrer} enCours={ecrire.isPending}>Enregistrer</Bouton>} />
 
-      <div className="flex flex-col gap-4">
-        <Bloc titre="Classe">
+      <div className="grid items-start gap-4 lg:grid-cols-2">
+        <Bloc titre="Classe" icone={School} couleur="#2E5BFF" fond="#E6ECFF">
           <div className="grid gap-3 sm:grid-cols-2">
             <Champ label="Classe">{(id) => <Saisie id={id} value={c.nom ?? ''} onChange={(e) => setC({ ...c, nom: e.target.value })} />}</Champ>
-            <Champ label="Nom affiché aux familles">{(id) => <Saisie id={id} value={c.enseignant_nom ?? ''} onChange={(e) => setC({ ...c, enseignant_nom: e.target.value })} />}</Champ>
+            <Champ label="Nom pour les familles">{(id) => <Saisie id={id} value={c.enseignant_nom ?? ''} onChange={(e) => setC({ ...c, enseignant_nom: e.target.value })} />}</Champ>
             <Champ label="École">{(id) => <Saisie id={id} value={c.ecole ?? ''} onChange={(e) => setC({ ...c, ecole: e.target.value })} />}</Champ>
             <Champ label="Ville">{(id) => <Saisie id={id} value={c.ville ?? ''} onChange={(e) => setC({ ...c, ville: e.target.value })} />}</Champ>
             <Champ label="Année">{(id) => <Saisie id={id} value={c.annee ?? ''} onChange={(e) => setC({ ...c, annee: e.target.value })} placeholder="2026-2027" />}</Champ>
           </div>
         </Bloc>
 
-        <Bloc titre="Jours de classe">
+        <Bloc titre="Jours" icone={CalendarCheck} couleur="#13A35B" fond="#E1F6EA">
           <div className="flex flex-wrap gap-2">
             {JOURS.map((j) => {
               const actif = jours.includes(j.v)
@@ -112,18 +115,18 @@ export default function Reglages() {
           </div>
         </Bloc>
 
-        <Bloc titre="Résumé du soir">
-          <div className="flex flex-col gap-4">
-            <Bascule actif={r.resume_auto ?? true} onChange={(v) => maj({ resume_auto: v })} label="Publier le résumé et les devoirs automatiquement" />
-            <div className="flex items-center gap-3">
-              <label htmlFor="heure-resume" className="text-sm font-bold">À</label>
-              <input id="heure-resume" type="time" value={r.heure_resume ?? '16:45'} onChange={(e) => maj({ heure_resume: e.target.value })}
+        <Bloc titre="Résumé du soir" icone={Send} couleur="#7B4DFF" fond="#EEE8FF">
+          <div className="flex flex-wrap items-center gap-4">
+            <Bascule actif={r.resume_auto ?? true} onChange={(v) => maj({ resume_auto: v })} label="Automatique" />
+            <label htmlFor="heure-resume" className="ml-auto flex items-center gap-2">
+              <Clock className="size-5 text-[#7B4DFF]" aria-hidden />
+              <input id="heure-resume" type="time" value={r.heure_resume ?? '16:45'} onChange={(e) => maj({ heure_resume: e.target.value })} aria-label="Heure"
                 className="h-11 rounded-xl border border-trait bg-papier px-3 font-bold tabular-nums focus:border-bateau focus:outline-none" />
-            </div>
+            </label>
           </div>
         </Bloc>
 
-        <Bloc titre="Périodes" actions={<Ajouter label="Ajouter une période" onClick={() => maj({ periodes: [...periodes, { id: `P${periodes.length + 1}`, debut: '', fin: '' }] })} />}>
+        <Bloc titre="Périodes" icone={CalendarRange} couleur="#0A8FD6" fond="#E0F3FD" actions={<Ajouter label="Ajouter une période" onClick={() => maj({ periodes: [...periodes, { id: `P${periodes.length + 1}`, debut: '', fin: '' }] })} />}>
           <ul className="flex flex-col gap-2">
             {periodes.map((p, i) => (
               <li key={i} className="grid grid-cols-[2.75rem_minmax(0,1fr)_minmax(0,1fr)_2.25rem] items-center gap-1.5 sm:grid-cols-[3.5rem_minmax(0,1fr)_minmax(0,1fr)_2.5rem] sm:gap-2">
@@ -137,7 +140,7 @@ export default function Reglages() {
           </ul>
         </Bloc>
 
-        <Bloc titre="Vacances" actions={<Ajouter label="Ajouter des vacances" onClick={() => maj({ vacances: [...vacances, { nom: '', debut: '', fin: '' }] })} />}>
+        <Bloc titre="Vacances" icone={Sun} couleur="#B37400" fond="#FFF4DC" actions={<Ajouter label="Ajouter des vacances" onClick={() => maj({ vacances: [...vacances, { nom: '', debut: '', fin: '' }] })} />}>
           <ul className="flex flex-col gap-2">
             {vacances.map((v, i) => (
               <li key={i} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_2.5rem] gap-2 border-b border-trait pb-2 last:border-0 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)_2.5rem] sm:border-0 sm:pb-0">
@@ -151,7 +154,7 @@ export default function Reglages() {
           </ul>
         </Bloc>
 
-        <Bloc titre="Jours fériés" actions={<Ajouter label="Ajouter un jour férié" onClick={() => maj({ feries: [...feries, ''] })} />}>
+        <Bloc titre="Fériés" icone={Flag} couleur="#E5484D" fond="#FDE7E8" actions={<Ajouter label="Ajouter un jour férié" onClick={() => maj({ feries: [...feries, ''] })} />}>
           <ul className="flex flex-wrap gap-2">
             {feries.map((f, i) => (
               <li key={i} className="flex items-center gap-1 rounded-2xl bg-papier pl-1">
@@ -163,7 +166,7 @@ export default function Reglages() {
           </ul>
         </Bloc>
 
-        <Bloc titre="Livret (LSU)"
+        <Bloc titre="Livret" icone={GraduationCap} couleur="#F2711C" fond="#FFEEDF"
           actions={<BoutonIcone icone={RotateCcw} label="Recalculer depuis les périodes" variante="doux" className="size-9"
             onClick={() => maj({ lsu: { rythme, bilans: bilansDepuisPeriodes(periodes, rythme) } })} />}>
           <div className="mb-3">
@@ -181,10 +184,9 @@ export default function Reglages() {
               </li>
             ))}
           </ul>
-          {!!bilans.length && <p className="mt-2 text-xs text-brume">{bilans.map((b) => `${b.id} : ${b.debut ? fmtJourCourt(b.debut) : '?'} → ${b.fin ? fmtJourCourt(b.fin) : '?'}`).join(' · ')}</p>}
         </Bloc>
 
-        <Bloc titre="Code enseignante">
+        <Bloc titre="Code collègue" icone={KeyRound} couleur="#4F5D7A" fond="#E9ECF3">
           {code ? (
             <div className="flex flex-wrap items-center gap-3">
               <span className="rounded-2xl bg-bateau-clair px-4 py-2 font-titre text-xl tracking-[0.15em] text-bateau-fonce">{code}</span>
@@ -194,11 +196,10 @@ export default function Reglages() {
           ) : (
             <Bouton variante="secondaire" icone={KeyRound} onClick={voirCode}>Afficher</Bouton>
           )}
-          <p className="mt-2 text-xs text-brume">Pour relier le compte d'une collègue à la classe.</p>
         </Bloc>
       </div>
 
-      <div className="mt-6 flex justify-end">
+      <div className="mt-6 flex justify-end lg:hidden">
         <Bouton icone={Save} taille="l" onClick={enregistrer} enCours={ecrire.isPending}>Enregistrer</Bouton>
       </div>
     </div>

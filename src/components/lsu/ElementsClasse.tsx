@@ -4,7 +4,7 @@ import { Bouton, Champ, Feuille, PastilleMatiere, Texte, useToast } from '../ui'
 import { useEcrire } from '../../lib/donnees'
 import { LSU } from '../../lib/matieres'
 import type { LsuClasse } from '../../lib/types'
-import { ICONE_LSU } from './outils'
+import { ICONE_LSU, NOM_COURT_LSU } from './outils'
 
 /** Éléments du programme travaillés (communs à la classe) et projets du bilan */
 export function ElementsClasse({ ouverte, onFermer, classeId, bilan, actuel }: {
@@ -35,7 +35,7 @@ export function ElementsClasse({ ouverte, onFermer, classeId, bilan, actuel }: {
   }
 
   return (
-    <Feuille ouverte={ouverte} onFermer={onFermer} titre="Éléments du programme travaillés" large
+    <Feuille ouverte={ouverte} onFermer={onFermer} titre="Éléments travaillés" large
       pied={<>
         <Bouton variante="secondaire" onClick={onFermer}>Annuler</Bouton>
         <Bouton icone={Save} onClick={enregistrer} enCours={ecrire.isPending}>Enregistrer</Bouton>
@@ -45,13 +45,13 @@ export function ElementsClasse({ ouverte, onFermer, classeId, bilan, actuel }: {
           <div key={m.id} className="flex items-start gap-3">
             <span className="pt-7"><PastilleMatiere id={ICONE_LSU[m.id]} taille="s" /></span>
             <div className="flex-1">
-              <Champ label={m.nom}>
+              <Champ label={NOM_COURT_LSU[m.id] ?? m.nom}>
                 {(id) => <Texte id={id} value={elements[m.id] ?? ''} onChange={(e) => setElements({ ...elements, [m.id]: e.target.value })} />}
               </Champ>
             </div>
           </div>
         ))}
-        <Champ label="Projets et parcours">{(id) => <Texte id={id} value={projets} onChange={(e) => setProjets(e.target.value)} />}</Champ>
+        <Champ label="Projets">{(id) => <Texte id={id} value={projets} onChange={(e) => setProjets(e.target.value)} />}</Champ>
       </div>
     </Feuille>
   )

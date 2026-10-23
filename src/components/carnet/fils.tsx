@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { Megaphone, Send } from 'lucide-react'
+import { Check, Megaphone, Send, Signature } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { BoutonIcone } from '../ui'
 import { fmtDateHeure } from '../../lib/dates'
@@ -37,19 +37,53 @@ export function teinte(id: string | null | undefined) {
   return TEINTES[h % TEINTES.length]
 }
 
-export function Avatar({ eleve, classe }: { eleve?: Eleve | null; classe?: boolean }) {
+/** Fond pastel tiré de la teinte de l'élève */
+export const fondTeinte = (id: string | null | undefined) => teinte(id) + '1F'
+
+export function Avatar({ eleve, classe, blanc }: { eleve?: Eleve | null; classe?: boolean; blanc?: boolean }) {
   if (classe || !eleve) {
     return (
-      <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-ambre-clair text-ambre-fonce" aria-hidden>
+      <span className={clsx('flex size-11 shrink-0 items-center justify-center rounded-2xl text-ambre-fonce', blanc ? 'bg-white shadow-sm' : 'bg-ambre-clair')} aria-hidden>
         <Megaphone className="size-5" strokeWidth={2.2} />
       </span>
     )
   }
   const c = teinte(eleve.id)
   return (
-    <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl font-titre text-lg font-semibold text-white" style={{ background: c }} aria-hidden>
+    <span className={clsx('flex size-11 shrink-0 items-center justify-center rounded-2xl font-titre text-lg font-semibold', blanc ? 'bg-white shadow-sm' : 'text-white')}
+      style={blanc ? { color: c } : { background: c }} aria-hidden>
       {eleve.prenom.slice(0, 1)}
     </span>
+  )
+}
+
+/** Un fil en carte pastel : bulle, titre, une ligne d'aperçu, pastilles en icônes */
+export function CarteFil({ titre, apercu, eleve, classe, date, actif, nonLus, signature, onClick }: {
+  titre: string; apercu: string; eleve?: Eleve | null; classe?: boolean; date: string; actif?: boolean; nonLus?: number
+  signature?: { etat: 'attente' | 'signe'; texte?: string } | null; onClick: () => void
+}) {
+  const fond = classe || !eleve ? '#FFF4DC' : fondTeinte(eleve.id)
+  return (
+    <button type="button" onClick={onClick}
+      className={clsx('flex w-full items-center gap-3 rounded-[22px] p-2.5 text-left transition hover:brightness-[0.98]', actif && 'ring-[3px] ring-encre ring-offset-2 ring-offset-papier')}
+      style={{ background: fond }}>
+      <Avatar eleve={eleve} classe={classe} blanc />
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-2">
+          <span className="truncate font-bold text-encre">{titre}</span>
+          <span className="ml-auto shrink-0 text-[11px] font-bold text-brume">{date}</span>
+        </span>
+        <span className={clsx('block truncate text-sm', nonLus ? 'font-bold text-encre' : 'text-encre/60')}>{apercu}</span>
+      </span>
+      {signature && (
+        <span className={clsx('flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-xs font-bold', signature.etat === 'signe' ? 'bg-succes text-white' : 'bg-white text-ambre-fonce')}
+          title={signature.etat === 'signe' ? 'Signé' : 'À signer'}>
+          {signature.etat === 'signe' ? <Check className="size-3.5" strokeWidth={3} /> : <Signature className="size-3.5" />}
+          {signature.texte}
+        </span>
+      )}
+      {!!nonLus && <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-alerte text-xs font-bold text-white" aria-label={`${nonLus} non lu`}>{nonLus}</span>}
+    </button>
   )
 }
 
@@ -60,7 +94,7 @@ export function Bulle({ m, moi }: { m: Message; moi: boolean }) {
         {m.titre && !m.racine_id && <p className={clsx('mb-1 font-titre text-lg font-semibold leading-snug', moi ? 'text-white' : 'text-encre')}>{m.titre}</p>}
         <p className="whitespace-pre-wrap break-words leading-relaxed">{m.texte}</p>
       </div>
-      <p className="px-2 text-xs text-brume">{m.auteur_nom ?? ''} · {fmtDateHeure(m.created_at)}</p>
+      <p className="px-2 text-[11px] text-brume">{m.auteur_nom ?? ''} · {fmtDateHeure(m.created_at)}</p>
     </div>
   )
 }

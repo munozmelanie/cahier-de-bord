@@ -1,14 +1,14 @@
 import clsx from 'clsx'
 import { Check, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Bascule, Bouton, Champ, Feuille, Saisie, Texte, useConfirmation, useToast } from '../ui'
+import { Bascule, Bouton, BoutonIcone, Champ, Feuille, Saisie, Texte, useConfirmation, useToast } from '../ui'
 import { aujourdhui } from '../../lib/dates'
 import { useEcrire } from '../../lib/donnees'
 import type { EvenementAgenda } from '../../lib/types'
 import { TYPES_AGENDA, TYPES_SAISIE, type TypeAgenda } from './agenda'
 
 /** Ajouter ou modifier un événement de l'agenda */
-export function EditeurEvenement({ ouvert, onFermer, classeId, ev }: { ouvert: boolean; onFermer: () => void; classeId: string; ev: EvenementAgenda | null }) {
+export function EditeurEvenement({ ouvert, onFermer, classeId, ev, dateInitiale }: { ouvert: boolean; onFermer: () => void; classeId: string; ev: EvenementAgenda | null; dateInitiale?: string }) {
   const ecrire = useEcrire()
   const toast = useToast()
   const { demander, fenetre } = useConfirmation()
@@ -23,10 +23,10 @@ export function EditeurEvenement({ ouvert, onFermer, classeId, ev }: { ouvert: b
 
   useEffect(() => {
     if (!ouvert) return
-    setTitre(ev?.titre ?? ''); setType(ev?.type ?? 'info'); setDate(ev?.date ?? aujourdhui())
+    setTitre(ev?.titre ?? ''); setType(ev?.type ?? 'info'); setDate(ev?.date ?? dateInitiale ?? aujourdhui())
     setPlusieurs(!!ev?.fin && ev.fin !== ev.date); setFin(ev?.fin ?? ''); setHeure(ev?.heure ?? '')
     setDetails(ev?.details ?? ''); setVisible(ev?.visible_familles ?? true)
-  }, [ouvert, ev])
+  }, [ouvert, ev, dateInitiale])
 
   const finValide = !plusieurs || (fin && fin >= date)
   const pret = titre.trim() && date && finValide
@@ -53,9 +53,9 @@ export function EditeurEvenement({ ouvert, onFermer, classeId, ev }: { ouvert: b
 
   return (
     <>
-      <Feuille ouverte={ouvert} onFermer={onFermer} titre={ev ? 'Modifier' : 'Nouvel événement'}
+      <Feuille ouverte={ouvert} onFermer={onFermer} titre={ev ? 'Événement' : 'Nouvel événement'}
         pied={<>
-          {ev && <Bouton variante="fantome" icone={Trash2} onClick={supprimer} className="mr-auto text-alerte">Supprimer</Bouton>}
+          {ev && <BoutonIcone icone={Trash2} label="Supprimer" onClick={supprimer} className="mr-auto text-alerte" />}
           <Bouton variante="secondaire" onClick={onFermer}>Annuler</Bouton>
           <Bouton icone={Check} onClick={enregistrer} disabled={!pret} enCours={ecrire.isPending}>Enregistrer</Bouton>
         </>}>

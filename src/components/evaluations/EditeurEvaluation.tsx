@@ -86,7 +86,7 @@ export function EditeurEvaluation({ ouverte, evaluation, onFermer, onCree }: {
     <Feuille
       ouverte={ouverte}
       onFermer={onFermer}
-      titre={evaluation ? 'Modifier l\'évaluation' : 'Nouvelle évaluation'}
+      titre={evaluation ? 'Évaluation' : 'Nouvelle évaluation'}
       large
       pied={<>
         <Bouton variante="secondaire" onClick={onFermer}>Annuler</Bouton>
@@ -111,10 +111,13 @@ export function EditeurEvaluation({ ouverte, evaluation, onFermer, onCree }: {
           <ChoixMatiere valeur={matiere} onChange={changerMatiere} />
         </div>
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-bold">Compétences évaluées</p>
+          <p className="text-sm font-bold">Compétences</p>
           {items.map((it, i) => (
             <div key={it.id} className="grid grid-cols-[1fr_auto] gap-2 rounded-2xl bg-white p-2 sm:grid-cols-[1fr_15rem_auto]">
-              <Saisie value={it.libelle} onChange={(e) => majItem(i, { libelle: e.target.value })} placeholder={`Compétence ${i + 1}`} aria-label={`Compétence ${i + 1}`} className="py-2" />
+              <span className="flex items-center gap-2">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-bateau-clair font-titre text-sm font-semibold text-bateau-fonce">{i + 1}</span>
+                <Saisie value={it.libelle} onChange={(e) => majItem(i, { libelle: e.target.value })} placeholder="Reconnaître un déterminant" aria-label={`Compétence ${i + 1}`} className="py-2" />
+              </span>
               <div className="order-3 col-span-2 sm:order-none sm:col-span-1">
                 <ChoixDomaine valeur={it.domaine} onChange={(v) => majItem(i, { domaine: v })} />
               </div>
@@ -123,7 +126,7 @@ export function EditeurEvaluation({ ouverte, evaluation, onFermer, onCree }: {
           ))}
           <Bouton variante="doux" icone={Plus} className="self-start"
             onClick={() => setItems((l) => [...l, { id: nouvelId(), libelle: '', domaine: (matiere && DOMAINE_PAR_MATIERE[matiere]) || l[l.length - 1]?.domaine || null }])}>
-            Ajouter une compétence
+            Compétence
           </Bouton>
         </div>
       </div>

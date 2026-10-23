@@ -10,7 +10,7 @@ export function ChampsCode(p: {
 }) {
   return (
     <>
-      <Champ label="Code reçu de l'école" aide="Sur le papier donné par l'enseignante">
+      <Champ label="Code">
         {(id) => (
           <Saisie id={id} required value={p.code} onChange={(e) => p.setCode(e.target.value.toUpperCase())}
             placeholder="ABCD-EFGH" autoCapitalize="characters" autoComplete="off" spellCheck={false}
@@ -18,8 +18,8 @@ export function ChampsCode(p: {
         )}
       </Champ>
       <div className="grid grid-cols-[1fr_auto] gap-3">
-        <Champ label="Votre prénom">{(id) => <Saisie id={id} value={p.nom} onChange={(e) => p.setNom(e.target.value)} autoComplete="given-name" />}</Champ>
-        <Champ label="Vous êtes">
+        <Champ label="Prénom">{(id) => <Saisie id={id} value={p.nom} onChange={(e) => p.setNom(e.target.value)} autoComplete="given-name" />}</Champ>
+        <Champ label="Lien">
           {(id) => (
             <Liste id={id} value={p.lien} onChange={(e) => p.setLien(e.target.value)}>
               <option value="">—</option>
@@ -69,12 +69,14 @@ export default function Relier() {
       <div className="w-full max-w-md">
         <div className="mb-8 flex justify-center"><Logo /></div>
         <form onSubmit={envoyer} className="flex flex-col gap-4 rounded-[28px] bg-white p-6 shadow-doux sm:p-8">
-          <h1 className="font-titre text-2xl font-semibold">Relier mon compte</h1>
-          <p className="-mt-2 text-sm text-brume">{email}</p>
+          <div className="flex items-center gap-3">
+            <span className="flex size-11 items-center justify-center rounded-2xl bg-bateau-clair text-bateau"><KeyRound className="size-6" /></span>
+            <p className="min-w-0 truncate text-sm font-bold text-brume">{email}</p>
+          </div>
           <ChampsCode code={code} setCode={setCode} nom={nom} setNom={setNom} lien={lien} setLien={setLien} />
           {erreur && <Erreur message={erreur} />}
-          <Bouton type="submit" taille="l" icone={KeyRound} enCours={enCours}>Valider le code</Bouton>
-          <Bouton type="button" variante="fantome" icone={LogOut} onClick={deconnexion}>Se déconnecter</Bouton>
+          <Bouton type="submit" taille="l" icone={KeyRound} enCours={enCours}>Valider</Bouton>
+          <Bouton type="button" variante="fantome" icone={LogOut} onClick={deconnexion}>Déconnexion</Bouton>
         </form>
       </div>
     </div>

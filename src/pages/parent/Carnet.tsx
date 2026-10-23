@@ -1,9 +1,8 @@
-import clsx from 'clsx'
 import { ArrowLeft, Check, MessagesSquare, PenLine, Signature } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Avatar, Bulle, construireFils, indexLectures, titreFil, ZoneReponse, type Fil } from '../../components/carnet/fils'
+import { Bulle, CarteFil, construireFils, indexLectures, titreFil, ZoneReponse, type Fil } from '../../components/carnet/fils'
 import { NouveauMotFamille } from '../../components/carnet/NouveauMot'
-import { Badge, Bouton, BoutonIcone, Chargement, Erreur, useToast, Vide } from '../../components/ui'
+import { Bouton, BoutonIcone, Chargement, Erreur, useToast, Vide } from '../../components/ui'
 import { fmtDateHeure, quand } from '../../lib/dates'
 import { useEcrire, useLectures, useMessages } from '../../lib/donnees'
 import { useSession } from '../../lib/session'
@@ -54,33 +53,21 @@ export default function CarnetParent() {
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
         <h1 className="font-titre text-3xl font-semibold text-encre">Carnet</h1>
-        <Bouton icone={PenLine} onClick={() => setNouveau(true)}>Écrire</Bouton>
+        <BoutonIcone icone={PenLine} label="Écrire à l'enseignante" variante="primaire" onClick={() => setNouveau(true)} />
       </div>
       {fils.length === 0 ? (
-        <Vide icone={MessagesSquare} texte="Aucun mot pour le moment." />
+        <Vide icone={MessagesSquare} texte="Aucun mot" />
       ) : (
         <ul className="flex flex-col gap-2">
           {fils.map((f) => {
-            const n = nonLus(f).length
             const dernier = f.reponses[f.reponses.length - 1] ?? f.racine
-            const aSigner = f.racine.a_signer && !maLecture(f.racine)?.signe_le
+            const signe = !!maLecture(f.racine)?.signe_le
             return (
               <li key={f.racine.id}>
-                <button onClick={() => setOuvert(f.racine.id)} className="flex w-full items-center gap-3 rounded-3xl bg-white p-3 text-left shadow-doux">
-                  <Avatar eleve={f.racine.eleve_id ? enfant : null} classe={!f.racine.eleve_id} />
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-2">
-                      <span className={clsx('truncate font-bold', n ? 'text-encre' : 'text-encre/80')}>{titreFil(f.racine)}</span>
-                      <span className="ml-auto shrink-0 text-xs text-brume">{quand(f.dernier.slice(0, 10))}</span>
-                    </span>
-                    <span className="mt-0.5 flex items-center gap-2">
-                      <span className={clsx('min-w-0 flex-1 truncate text-sm', n ? 'text-encre' : 'text-brume')}>{dernier.texte}</span>
-                      {aSigner && <Badge couleur="ambre"><Signature className="size-3" />À signer</Badge>}
-                      {f.racine.a_signer && !aSigner && <Badge couleur="succes"><Check className="size-3" />Signé</Badge>}
-                      {n > 0 && <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-alerte text-[11px] font-bold text-white">{n}</span>}
-                    </span>
-                  </span>
-                </button>
+                <CarteFil titre={titreFil(f.racine)} apercu={dernier.texte} eleve={f.racine.eleve_id ? enfant : null} classe={!f.racine.eleve_id}
+                  date={quand(f.dernier.slice(0, 10))} nonLus={nonLus(f).length}
+                  signature={f.racine.a_signer ? { etat: signe ? 'signe' : 'attente' } : null}
+                  onClick={() => setOuvert(f.racine.id)} />
               </li>
             )
           })}
@@ -126,7 +113,9 @@ function VueFil({ fil, enfant, classeId, maLecture, onRetour }: {
         {racine.a_signer && (
           <div className="flex justify-center py-1">
             {maLecture?.signe_le ? (
-              <Badge couleur="succes"><Check className="size-3.5" />Signé le {fmtDateHeure(maLecture.signe_le)}</Badge>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-succes px-3 py-1.5 text-sm font-bold text-white">
+                <Check className="size-4" strokeWidth={3} />{fmtDateHeure(maLecture.signe_le)}
+              </span>
             ) : (
               <Bouton icone={Signature} taille="l" onClick={signer} enCours={ecrire.isPending} className="bg-succes hover:bg-succes hover:brightness-95">
                 Signer
