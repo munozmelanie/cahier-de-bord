@@ -7,7 +7,14 @@ import { definirAujourdhui } from './dates'
 const URL = 'https://zfiinvgniqwwqdbliwwo.supabase.co'
 const CLE = 'sb_publishable_F2vBGmrYrDRZbZJwHP5muw_UUhvaRQt'
 
+/** Aperçu publié dans Claude : toujours en démo */
+export const APERCU = import.meta.env.VITE_APERCU === '1'
+
 function modeDemoDemande() {
+  if (APERCU) {
+    try { if (!localStorage.getItem('cdb-demo-persona')) localStorage.setItem('cdb-demo-persona', 'enseignant') } catch { /* rien */ }
+    return true
+  }
   try {
     const p = new URLSearchParams(window.location.search)
     if (p.has('demo')) localStorage.setItem('cdb-demo', '1')

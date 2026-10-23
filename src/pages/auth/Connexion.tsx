@@ -19,6 +19,12 @@ export default function Connexion() {
               { id: 'inscription', label: 'Créer un compte', icone: UserPlus },
             ]} />
           </div>
+          {MODE_DEMO && (
+            <div className="mb-6 grid grid-cols-2 gap-2">
+              <Bouton variante="doux" onClick={() => (db.auth as any).entrerComme('enseignant')}>Enseignante</Bouton>
+              <Bouton variante="doux" onClick={() => (db.auth as any).entrerComme('parent')}>Famille</Bouton>
+            </div>
+          )}
           {mode === 'connexion' ? <FormConnexion /> : <FormInscription />}
         </div>
         {!MODE_DEMO && (
