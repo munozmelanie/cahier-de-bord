@@ -51,9 +51,9 @@ export default function AccueilParent() {
 
   const quandResume = resume ? (resume.date === auj ? "aujourd'hui" : fmtJourCourt(resume.date)) : ''
   return (
-    <div className="flex flex-col gap-4">
+    <div className="grid items-start gap-4 lg:grid-cols-2">
       {(aSigner > 0 || aLire > 0) && (
-        <Link to="/carnet" className={clsx('flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold', aSigner ? 'bg-alerte-clair text-alerte' : 'bg-bateau-clair text-bateau-fonce')}>
+        <Link to="/carnet" className={clsx('flex items-center gap-3 rounded-2xl px-4 py-3 font-semibold lg:col-span-2', aSigner ? 'bg-alerte-clair text-alerte' : 'bg-bateau-clair text-bateau-fonce')}>
           {aSigner ? <Signature className="size-5 shrink-0" /> : <PenLine className="size-5 shrink-0" />}
           <span className="flex-1">
             {aSigner ? `${aSigner} mot${aSigner > 1 ? 's' : ''} à signer` : `${aLire} nouveau${aLire > 1 ? 'x' : ''} mot${aLire > 1 ? 's' : ''}`}

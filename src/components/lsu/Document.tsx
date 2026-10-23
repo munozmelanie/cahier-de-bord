@@ -21,9 +21,21 @@ export function EnTeteLivret({ classe, bilan, eleve, nbBilans }: { classe: Pick<
   return (
     <div className="flex flex-col gap-5 text-sm text-encre">
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="leading-snug">
-          {classe.ecole && <p className="font-semibold">{classe.ecole}</p>}
-          {classe.ville && <p>{classe.ville}</p>}
+        <div className="flex min-w-0 flex-col gap-4">
+          {(classe.ecole || classe.ville) && (
+            <div className="leading-snug">
+              {classe.ecole && <p className="font-semibold">{classe.ecole}</p>}
+              {classe.ville && <p>{classe.ville}</p>}
+            </div>
+          )}
+          <div className="leading-relaxed">
+            <p className="font-semibold">Année scolaire {annee.replace('-', '/')}</p>
+            <p>{bilan.nom} du {dateCourte(bilan.debut)} au {dateCourte(bilan.fin)}</p>
+            <p className="font-bold">{[eleve.nom?.toUpperCase(), eleve.prenom].filter(Boolean).join(' ')}</p>
+            {classe.enseignant_nom && <p>Enseignant(e)(s) : {classe.enseignant_nom}</p>}
+            <p>Classe de {classe.nom}</p>
+            <p>Nombre de bilans dans l'année scolaire : {nbBilans}</p>
+          </div>
         </div>
         <div className="grid grid-cols-[auto_repeat(3,2.75rem)] overflow-hidden rounded-md text-center text-xs font-semibold" aria-label="Cycle 3, CM1">
           {cycles.map(([c, niveaux]) => (
@@ -37,14 +49,6 @@ export function EnTeteLivret({ classe, bilan, eleve, nbBilans }: { classe: Pick<
             </Fragment>
           ))}
         </div>
-      </div>
-      <div className="leading-relaxed">
-        <p className="font-semibold">Année scolaire {annee.replace('-', '/')}</p>
-        <p>{bilan.nom} du {dateCourte(bilan.debut)} au {dateCourte(bilan.fin)}</p>
-        <p className="font-bold">{[eleve.nom?.toUpperCase(), eleve.prenom].filter(Boolean).join(' ')}</p>
-        {classe.enseignant_nom && <p>Enseignant(e)(s) : {classe.enseignant_nom}</p>}
-        <p>Classe de {classe.nom}</p>
-        <p>Nombre de bilans dans l'année scolaire : {nbBilans}</p>
       </div>
       <p className={clsx(TRAIT, 'py-1.5 text-center font-bold')}>Suivi des acquis scolaires de l'élève</p>
     </div>

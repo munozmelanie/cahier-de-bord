@@ -23,7 +23,7 @@ export default function AgendaParent() {
 
   return (
     <CalendrierMois
-      mois={mois} onMois={setMois} elements={elements} reglages={r} empile
+      mois={mois} onMois={setMois} elements={elements} reglages={r}
       choisi={choisi} onChoisir={(j) => { setChoisi(j); if (moisDe(j) !== mois) setMois(moisDe(j)) }}
     />
   )

@@ -31,7 +31,7 @@ export function ParentShell() {
   return (
     <div className="min-h-dvh">
       <BandeauDemo />
-      <header className="mx-auto flex max-w-2xl items-center gap-3 px-[max(16px,env(safe-area-inset-left))] pt-5">
+      <header className="mx-auto flex max-w-6xl items-center gap-3 px-[max(16px,env(safe-area-inset-left))] pt-5">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-bateau text-lg font-bold text-white">
             {enfant?.prenom.slice(0, 1) ?? '?'}
@@ -56,7 +56,7 @@ export function ParentShell() {
       </header>
 
       {/* Onglets en haut sur grand écran */}
-      <nav className="mx-auto mt-4 hidden max-w-2xl px-4 sm:block">
+      <nav className="mx-auto mt-4 hidden max-w-6xl px-4 sm:block">
         <div className="flex gap-1 border-b border-trait">
           {ONGLETS.map((o) => {
             const Icone = o.icone
@@ -73,7 +73,7 @@ export function ParentShell() {
         </div>
       </nav>
 
-      <main className="mx-auto max-w-2xl px-[max(16px,env(safe-area-inset-left))] pb-28 pt-5 sm:pb-12">
+      <main className="mx-auto max-w-6xl px-[max(16px,env(safe-area-inset-left))] pb-28 pt-5 sm:pb-12">
         <Outlet />
       </main>
 

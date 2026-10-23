@@ -44,7 +44,7 @@ export default function DevoirsParent() {
       </div>
       {devoirs.isLoading ? <Chargement /> : affichage === 'mois' ? (
         <MoisDevoirs
-          mois={mois} onMois={setMois} devoirs={devoirs.data ?? []} reglages={classe?.reglages} empile
+          mois={mois} onMois={setMois} devoirs={devoirs.data ?? []} reglages={classe?.reglages}
           choisi={choisi} onChoisir={(j) => { setChoisi(j); if (moisDe(j) !== mois) setMois(moisDe(j)) }}
           rendu={(liste) => liste.map(carte)}
         />
@@ -52,7 +52,6 @@ export default function DevoirsParent() {
         <CalendrierSemaine
           jours={jours}
           reglages={classe?.reglages}
-          liste
           compte={(j) => (parJour.get(j) ?? []).filter((d) => !faits.includes(d.id)).length}
           rendu={(j) => {
             const l = parJour.get(j) ?? []
