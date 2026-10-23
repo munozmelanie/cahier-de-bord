@@ -7,6 +7,7 @@ import { useMemo, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { Feuille } from '../components/ui'
 import { BandeauDemo } from '../components/BandeauDemo'
+import { CarteInstallation } from '../components/CarteInstallation'
 import { useLectures, useMessages } from '../lib/donnees'
 import { useSession } from '../lib/session'
 import { MODE_DEMO } from '../lib/supabase'
@@ -127,6 +128,7 @@ export function ProfShell() {
 
       <main className="px-[max(16px,env(safe-area-inset-left))] pb-28 pt-5 sm:px-6 lg:ml-60 lg:px-10 lg:pb-12 lg:pt-8">
         <div className="mx-auto max-w-6xl">
+          <CarteInstallation className="mb-5 lg:hidden" />
           <Outlet />
         </div>
       </main>

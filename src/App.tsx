@@ -50,6 +50,7 @@ function Routeur() {
   if (role === 'parent') {
     return (
       <Routes>
+        <Route path="code/:code" element={<Relier />} />
         <Route element={<ParentShell />}>
           <Route index element={<AccueilParent />} />
           <Route path="devoirs" element={<DevoirsParent />} />

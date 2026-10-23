@@ -1,6 +1,7 @@
+import { ADRESSE_APPLI, lienFamille, qrSvg } from '../../lib/qr'
 import type { Classe, Eleve } from '../../lib/types'
 
-export const ADRESSE_APPLI = 'https://munozmelanie.github.io/cahier-de-bord/'
+export { ADRESSE_APPLI }
 
 const echapper = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!))
 
@@ -12,13 +13,18 @@ export function imprimerCodes(eleves: Eleve[], classe: Classe) {
   const coupon = (e: Eleve) => `
     <div class="coupon">
       <div class="haut"><span class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 18H2a4 4 0 0 0 4 4h12a4 4 0 0 0 4-4Z"/><path d="M21 14 10 2 3 14h18Z"/><path d="M10 2v16"/></svg></span><span><b>Cahier de bord</b><br><small>${entete}</small></span></div>
-      <p class="prenom">${echapper(e.prenom)}</p>
-      <p class="code">${echapper(e.code_famille)}</p>
-      <ol>
-        <li>Ouvrez <b>${ADRESSE_APPLI.replace('https://', '')}</b></li>
-        <li>Créez un compte et tapez ce code</li>
-        <li>C'est prêt : devoirs, carnet, livret</li>
-      </ol>
+      <div class="corps">
+        <div>
+          <p class="prenom">${echapper(e.prenom)}</p>
+          <ol>
+            <li>Scannez le QR code avec l'appareil photo du téléphone.</li>
+            <li>Créez votre compte : le code est déjà rempli.</li>
+            <li>Installez l'appli : elle vous montre comment.</li>
+          </ol>
+        </div>
+        <div class="qr">${qrSvg(lienFamille(e.code_famille))}</div>
+      </div>
+      <p class="sans">Sans QR code : ouvrez <b>${ADRESSE_APPLI.replace('https://', '').replace(/\/$/, '')}</b>, « Nouveau compte », code <b class="code">${echapper(e.code_famille)}</b></p>
     </div>`
   const pages: string[] = []
   for (let i = 0; i < eleves.length; i += 8) pages.push(`<div class="page">${eleves.slice(i, i + 8).map(coupon).join('')}</div>`)
@@ -29,13 +35,16 @@ export function imprimerCodes(eleves: Eleve[], classe: Classe) {
   body { margin: 0; font-family: Figtree, Arial, sans-serif; color: #1E2A47; }
   .page { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, 69mm); break-after: page; }
   .page:last-child { break-after: auto; }
-  .coupon { border: 1px dashed #A3ACC2; padding: 6mm 7mm; display: flex; flex-direction: column; gap: 2mm; break-inside: avoid; }
+  .coupon { border: 1px dashed #A3ACC2; padding: 5mm 6mm; display: flex; flex-direction: column; gap: 2mm; break-inside: avoid; }
   .haut { display: flex; align-items: center; gap: 3mm; font-size: 11pt; line-height: 1.2; }
   .haut small { color: #6A7593; font-size: 8.5pt; }
   .logo { display: inline-flex; width: 9mm; height: 9mm; border-radius: 3mm; background: #3358E0; align-items: center; justify-content: center; }
-  .prenom { margin: 1mm 0 0; font-size: 18pt; font-weight: 700; }
-  .code { margin: 0; font-size: 22pt; font-weight: 700; letter-spacing: 2pt; color: #3358E0; font-family: "Courier New", monospace; }
-  ol { margin: 0; padding-left: 5mm; font-size: 9.5pt; line-height: 1.45; }
+  .corps { display: grid; grid-template-columns: 1fr 30mm; gap: 4mm; align-items: center; flex: 1; }
+  .prenom { margin: 0 0 1.5mm; font-size: 17pt; font-weight: 700; }
+  .qr svg { width: 30mm; height: 30mm; display: block; }
+  .code { font-family: "Courier New", monospace; letter-spacing: 1pt; color: #3358E0; }
+  .sans { margin: 0; font-size: 7.5pt; color: #475467; }
+  ol { margin: 0; padding-left: 4.5mm; font-size: 9pt; line-height: 1.4; }
   @media screen { body { background: #F5F7FC; } .page { width: 190mm; margin: 10mm auto; background: #fff; } }
 </style></head><body>${pages.join('')}
 <script>window.onload = function () { setTimeout(function () { window.print() }, 250) }<\/script></body></html>`)

@@ -4,6 +4,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { imprimerCodes } from '../../components/eleves/imprimerCodes'
+import { lienFamille, qrSvg } from '../../lib/qr'
 import {
   Bascule, Bouton, BoutonIcone, Champ, Chargement, Entete, Erreur, Feuille, Saisie, useConfirmation, useToast,
 } from '../../components/ui'
@@ -205,11 +206,18 @@ function FicheEleve({ eleve, familles, onFermer, onCopier, place }: {
             <Champ label="Nom">{(id) => <Saisie id={id} value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Facultatif" />}</Champ>
           </div>
 
-          <section className="flex items-center gap-3 rounded-2xl bg-papier p-3">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-bateau-clair text-bateau" title="Code famille"><KeyRound className="size-[18px]" /></span>
-            <span className="flex-1 text-xl font-bold tracking-wider text-encre">{eleve.code_famille}</span>
-            <BoutonIcone icone={Copy} label="Copier le code" onClick={onCopier} />
-            <BoutonIcone icone={RefreshCw} label="Nouveau code" onClick={nouveauCode} disabled={enCours} />
+          <section className="flex items-center gap-4 rounded-2xl bg-papier p-3">
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
+              <div className="flex items-center gap-3">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-bateau-clair text-bateau" title="Code famille"><KeyRound className="size-[18px]" /></span>
+                <span className="flex-1 text-xl font-bold tracking-wider text-encre">{eleve.code_famille}</span>
+                <BoutonIcone icone={Copy} label="Copier le code" onClick={onCopier} />
+                <BoutonIcone icone={RefreshCw} label="Nouveau code" onClick={nouveauCode} disabled={enCours} />
+              </div>
+              <p className="text-xs text-brume">La famille scanne le QR code avec son téléphone : le code est déjà rempli.</p>
+            </div>
+            <div className="size-24 shrink-0 overflow-hidden rounded-lg bg-white p-1 [&_svg]:size-full" aria-label="QR code de la famille"
+              dangerouslySetInnerHTML={{ __html: qrSvg(lienFamille(eleve.code_famille)) }} />
           </section>
 
           <section className="flex flex-col gap-2 rounded-2xl bg-papier p-3">

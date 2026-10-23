@@ -1,13 +1,19 @@
 import { FlaskConical, KeyRound, LogIn, Mail, NotebookPen, UserPlus, Users } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
+import { useLocation } from 'react-router-dom'
 import { Logo } from '../../components/Logo'
 import { Bouton, Champ, Erreur, Onglets, Saisie } from '../../components/ui'
 import { db, MODE_DEMO, traduireErreur } from '../../lib/supabase'
 import { useSession } from '../../lib/session'
-import { ChampsCode, nomComplet } from './Relier'
+import { ChampsCode, codeDuLien, nomComplet } from './Relier'
 
 export default function Connexion() {
-  const [mode, setMode] = useState<'connexion' | 'inscription'>('connexion')
+  const codeLien = codeDuLien(useLocation().pathname)
+  const [mode, setMode] = useState<'connexion' | 'inscription'>(codeLien ? 'inscription' : 'connexion')
+  // Lien d'un coupon : on garde le code, au cas où la famille a déjà un compte et se connecte
+  useEffect(() => {
+    if (codeLien) try { localStorage.setItem('cdb-code-en-attente', JSON.stringify({ code: codeLien })) } catch { /* rien */ }
+  }, [codeLien])
   return (
     <div className="flex min-h-dvh flex-col items-center px-4 py-10">
       <div className="w-full max-w-md">
@@ -29,7 +35,10 @@ export default function Connexion() {
               </button>
             </div>
           )}
-          {mode === 'connexion' ? <FormConnexion /> : <FormInscription />}
+          {codeLien && mode === 'inscription' && (
+            <p className="mb-4 rounded-2xl bg-succes-clair px-4 py-3 text-sm font-medium text-succes">Votre code est déjà rempli. Indiquez votre nom, votre e-mail et choisissez un mot de passe.</p>
+          )}
+          {mode === 'connexion' ? <FormConnexion /> : <FormInscription codeInitial={codeLien} />}
         </div>
         {!MODE_DEMO && (
           <p className="mt-6 flex justify-center">
@@ -76,11 +85,11 @@ function FormConnexion() {
   )
 }
 
-function FormInscription() {
+function FormInscription({ codeInitial = '' }: { codeInitial?: string }) {
   const { rafraichir } = useSession()
   const [email, setEmail] = useState('')
   const [mdp, setMdp] = useState('')
-  const [code, setCode] = useState('')
+  const [code, setCode] = useState(codeInitial)
   const [prenom, setPrenom] = useState('')
   const [nom, setNom] = useState('')
   const [lien, setLien] = useState('')
@@ -103,6 +112,7 @@ function FormInscription() {
       const r = await db.rpc('rejoindre', { code, nom: nomComplet(prenom, nom), lien })
       if (r.error) throw new Error(traduireErreur(r.error.message))
       if (r.data?.erreur) throw new Error(r.data.erreur)
+      try { localStorage.removeItem('cdb-code-en-attente') } catch { /* rien */ }
       await rafraichir()
     } catch (err) {
       setErreur((err as Error).message)

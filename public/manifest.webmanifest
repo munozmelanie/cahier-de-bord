@@ -4,11 +4,28 @@
   "start_url": "/cahier-de-bord/",
   "scope": "/cahier-de-bord/",
   "display": "standalone",
-  "background_color": "#F5F7FC",
-  "theme_color": "#2E5BFF",
+  "background_color": "#F5F6F8",
+  "theme_color": "#3358E0",
   "icons": [
-    { "src": "/cahier-de-bord/icone-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/cahier-de-bord/icone-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "/cahier-de-bord/icone.svg", "sizes": "any", "type": "image/svg+xml" }
-  ]
+    {
+      "src": "/cahier-de-bord/icone-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/cahier-de-bord/icone-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/cahier-de-bord/icone.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "id": "/cahier-de-bord/",
+  "description": "Devoirs, carnet de liaison, agenda et livret de la classe.",
+  "lang": "fr"
 }

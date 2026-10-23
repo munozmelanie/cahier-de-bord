@@ -1,9 +1,14 @@
 import { KeyRound, LogOut } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Logo } from '../../components/Logo'
 import { Bouton, Champ, Erreur, Liste, Saisie } from '../../components/ui'
 import { db, traduireErreur } from '../../lib/supabase'
 import { useSession } from '../../lib/session'
+
+/** Code donné par le lien d'un coupon (#/code/ABCD-EFGH) */
+export const codeDuLien = (chemin: string) =>
+  chemin.startsWith('/code/') ? decodeURIComponent(chemin.slice(6)).toUpperCase().replace(/[^A-Z0-9-]/g, '') : ''
 
 /** Code à 12 caractères = code enseignant ; à 8 = code famille */
 export const estCodeEnseignant = (code: string) => code.replace(/[^A-Za-z0-9]/g, '').length === 12
@@ -62,8 +67,11 @@ export function ChampsCode(p: {
 
 /** Compte créé mais pas encore relié à un élève (ou à la classe) */
 export default function Relier() {
-  const { rafraichir, deconnexion, email } = useSession()
-  const [code, setCode] = useState('')
+  const { rafraichir, deconnexion, email, role } = useSession()
+  const nav = useNavigate()
+  const codeLien = codeDuLien(useLocation().pathname)
+  const ajout = role === 'parent' // famille déjà reliée qui ajoute un autre enfant
+  const [code, setCode] = useState(codeLien)
   const [prenom, setPrenom] = useState('')
   const [nom, setNom] = useState('')
   const [lien, setLien] = useState('')
@@ -75,7 +83,8 @@ export default function Relier() {
       const brut = localStorage.getItem('cdb-code-en-attente')
       if (brut) {
         const v = JSON.parse(brut)
-        setCode(v.code ?? ''); setPrenom(v.prenom ?? v.nom ?? ''); setNom(v.nomFamille ?? ''); setLien(v.lien ?? '')
+        if (!codeLien) setCode(v.code ?? '')
+        setPrenom(v.prenom ?? v.nom ?? ''); setNom(v.nomFamille ?? ''); setLien(v.lien ?? '')
       }
     } catch { /* rien */ }
   }, [])
@@ -89,6 +98,7 @@ export default function Relier() {
     if (r.data?.erreur) return setErreur(r.data.erreur)
     try { localStorage.removeItem('cdb-code-en-attente') } catch { /* rien */ }
     await rafraichir()
+    nav('/', { replace: true })
   }
 
   return (
@@ -98,12 +108,17 @@ export default function Relier() {
         <form onSubmit={envoyer} className="flex flex-col gap-4 rounded-3xl bg-white p-6 shadow-doux sm:p-8">
           <div className="flex items-center gap-3">
             <span className="flex size-11 items-center justify-center rounded-2xl bg-bateau-clair text-bateau"><KeyRound className="size-6" /></span>
-            <p className="min-w-0 truncate text-sm font-semibold text-brume">{email}</p>
+            <div className="min-w-0">
+              {ajout && <p className="font-semibold text-encre">Ajouter un enfant</p>}
+              <p className="truncate text-sm text-brume">{email}</p>
+            </div>
           </div>
           <ChampsCode code={code} setCode={setCode} prenom={prenom} setPrenom={setPrenom} nom={nom} setNom={setNom} lien={lien} setLien={setLien} />
           {erreur && <Erreur message={erreur} />}
           <Bouton type="submit" taille="l" icone={KeyRound} enCours={enCours}>Valider</Bouton>
-          <Bouton type="button" variante="fantome" icone={LogOut} onClick={deconnexion}>Déconnexion</Bouton>
+          {ajout
+            ? <Bouton type="button" variante="fantome" onClick={() => nav('/', { replace: true })}>Retour</Bouton>
+            : <Bouton type="button" variante="fantome" icone={LogOut} onClick={deconnexion}>Déconnexion</Bouton>}
         </form>
       </div>
     </div>

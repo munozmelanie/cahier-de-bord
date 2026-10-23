@@ -3,6 +3,7 @@ import { BookCheck, CalendarDays, GraduationCap, LogOut, MessagesSquare, Sun, ty
 import { useMemo } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { BandeauDemo } from '../components/BandeauDemo'
+import { CarteInstallation } from '../components/CarteInstallation'
 import { BoutonIcone } from '../components/ui'
 import { useLectures, useMessages } from '../lib/donnees'
 import { useSession } from '../lib/session'
@@ -74,6 +75,7 @@ export function ParentShell() {
       </nav>
 
       <main className="mx-auto max-w-6xl px-[max(16px,env(safe-area-inset-left))] pb-28 pt-5 sm:pb-12">
+        <CarteInstallation className="mb-5" />
         <Outlet />
       </main>
 
