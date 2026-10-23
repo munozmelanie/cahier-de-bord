@@ -1,53 +1,48 @@
-import clsx from 'clsx'
-import { BookCheck } from 'lucide-react'
+import { format, parseISO } from 'date-fns'
+import { fr } from 'date-fns/locale'
 import { useMemo, useState } from 'react'
-import { CaseFait, useFaits } from '../../components/devoirs/CaseFait'
-import { BadgeType } from '../../components/devoirs/devoirsOutils'
-import { Chargement, Onglets, PastilleMatiere, Vide } from '../../components/ui'
+import { CalendrierSemaine } from '../../components/CalendrierSemaine'
+import { useFaits } from '../../components/devoirs/CaseFait'
+import { CarteDevoir } from '../../components/devoirs/CarteDevoir'
+import { Chargement, NavPas } from '../../components/ui'
 import { useDevoirsPour } from '../../lib/donnees'
-import { aujourdhui, decaler, fmtJour, maj1, quand } from '../../lib/dates'
+import { aujourdhui, decaler, iso, joursSemaine, lundiDe } from '../../lib/dates'
+import { useSession } from '../../lib/session'
 import type { Devoir } from '../../lib/types'
 
-export default function DevoirsParent() {
-  const auj = aujourdhui()
-  const [vue, setVue] = useState<'tous' | 'evaluations' | 'passes'>('tous')
-  const futurs = useDevoirsPour(auj, decaler(auj, 35))
-  const passes = useDevoirsPour(decaler(auj, -14), decaler(auj, -1))
-  const { faits, basculer } = useFaits()
-  const q = vue === 'passes' ? passes : futurs
+const lundiCourant = () => iso(lundiDe(new Date(aujourdhui() + 'T12:00:00')))
 
-  const groupes = useMemo(() => {
-    const l = (q.data ?? []).filter((d) => vue !== 'evaluations' || d.type === 'evaluation')
+/** Devoirs de la semaine en calendrier, rangés par jour où il faut les faire */
+export default function DevoirsParent() {
+  const { classe } = useSession()
+  const [lundi, setLundi] = useState(lundiCourant)
+  const jours = useMemo(() => joursSemaine(lundi, classe?.reglages), [lundi, classe?.reglages])
+  const devoirs = useDevoirsPour(lundi, decaler(lundi, 6))
+  const { faits, basculer } = useFaits()
+  const parJour = useMemo(() => {
     const m = new Map<string, Devoir[]>()
-    for (const d of l) m.set(d.pour_le, [...(m.get(d.pour_le) ?? []), d])
-    const g = [...m.entries()].sort(([a], [b]) => a.localeCompare(b))
-    return vue === 'passes' ? g.reverse() : g
-  }, [q.data, vue])
+    for (const d of devoirs.data ?? []) m.set(d.pour_le, [...(m.get(d.pour_le) ?? []), d])
+    return m
+  }, [devoirs.data])
 
   return (
     <div className="flex flex-col gap-4">
-      <Onglets valeur={vue} onChange={setVue} options={[{ id: 'tous', label: 'À venir' }, { id: 'evaluations', label: 'Évaluations' }, { id: 'passes', label: 'Passés' }]} />
-      {q.isLoading ? <Chargement /> : groupes.length ? groupes.map(([date, l]) => (
-        <section key={date} className="rounded-[28px] bg-white p-5 shadow-doux">
-          <h2 className="font-titre text-xl font-semibold">Pour {quand(date, auj)}</h2>
-          <p className="mb-3 text-sm font-bold text-brume">{maj1(fmtJour(date))}</p>
-          <ul className="flex flex-col gap-3">
-            {l.map((d) => {
-              const fait = faits.includes(d.id)
-              return (
-                <li key={d.id} className="flex items-center gap-3">
-                  <PastilleMatiere id={d.matiere} />
-                  <span className={clsx('min-w-0 flex-1 font-bold leading-snug', d.type === 'evaluation' && 'text-alerte', fait && 'text-brume line-through')}>
-                    {d.texte}
-                    {d.type !== 'travail' && <span className="ml-2 align-middle"><BadgeType type={d.type} /></span>}
-                  </span>
-                  <CaseFait fait={fait} onClick={() => basculer(d.id)} />
-                </li>
-              )
-            })}
-          </ul>
-        </section>
-      )) : <Vide icone={BookCheck} texte="Aucun devoir" />}
+      <div className="flex justify-center">
+        <NavPas label={format(parseISO(lundi), 'd MMM', { locale: fr })} precedent={() => setLundi(decaler(lundi, -7))} suivant={() => setLundi(decaler(lundi, 7))} auMilieu={() => setLundi(lundiCourant())} />
+      </div>
+      {devoirs.isLoading ? <Chargement /> : (
+        <CalendrierSemaine
+          jours={jours}
+          reglages={classe?.reglages}
+          compte={(j) => (parJour.get(j) ?? []).filter((d) => !faits.includes(d.id)).length}
+          rendu={(j) => {
+            const l = parJour.get(j) ?? []
+            return l.length
+              ? l.map((d) => <CarteDevoir key={d.id} d={d} fait={faits.includes(d.id)} onFait={() => basculer(d.id)} />)
+              : <p className="py-6 text-center text-2xl text-trait">—</p>
+          }}
+        />
+      )}
     </div>
   )
 }

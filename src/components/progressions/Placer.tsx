@@ -1,8 +1,10 @@
 // « Placer dans le cahier journal » : choisir un jour et un créneau, puis créer la séance
 import clsx from 'clsx'
-import { CalendarPlus, Check } from 'lucide-react'
+import { CalendarPlus, Check, CalendarDays, Sun } from 'lucide-react'
+import { format, parseISO } from 'date-fns'
+import { fr } from 'date-fns/locale'
 import { useEffect, useMemo, useState } from 'react'
-import { Badge, Bouton, Champ, Feuille, PastilleMatiere, Saisie, useToast } from '../ui'
+import { Bouton, Feuille, Saisie, useToast } from '../ui'
 import { useEcrire, useEdt, useSeances } from '../../lib/donnees'
 import { aujourdhui, estJourClasse, fmtHeure, fmtJour, jourClasseSuivant, numJour, periodeDe, vacancesDe } from '../../lib/dates'
 import { matiere } from '../../lib/matieres'
@@ -21,6 +23,7 @@ export type BaseSeance = {
 }
 
 const sec = (h: string) => (h.length === 5 ? h + ':00' : h)
+const jourCourt = (s: string) => format(parseISO(s), 'EEE', { locale: fr }).replace('.', '')
 
 export function Placer({ base, onFermer, marquerEnCours }: {
   base: BaseSeance | null
@@ -32,16 +35,20 @@ export function Placer({ base, onFermer, marquerEnCours }: {
   const r = classe?.reglages
   const toast = useToast()
   const ecrire = useEcrire()
-  const premierJour = useMemo(() => {
+  const prochains = useMemo(() => {
     const a = aujourdhui()
-    return estJourClasse(a, r) ? a : jourClasseSuivant(a, r)
+    const l: string[] = []
+    let d = estJourClasse(a, r) ? a : jourClasseSuivant(a, r)
+    for (let i = 0; i < 8; i++) { l.push(d); d = jourClasseSuivant(d, r) }
+    return l
   }, [r])
-  const [date, setDate] = useState(premierJour)
+  const [date, setDate] = useState(prochains[0])
   const [choix, setChoix] = useState<string | null>(null)
+  const [libreDate, setLibreDate] = useState(false)
   const [debutLibre, setDebutLibre] = useState('09:00')
   const [finLibre, setFinLibre] = useState('09:45')
 
-  useEffect(() => { if (base) { setDate(premierJour); setChoix(null) } }, [base, premierJour])
+  useEffect(() => { if (base) { setDate(prochains[0]); setChoix(null); setLibreDate(false) } }, [base, prochains])
 
   const periode = periodeDe(date, r)
   const edt = useEdt(periode?.id)
@@ -76,16 +83,17 @@ export function Placer({ base, onFermer, marquerEnCours }: {
   }
 
   const m = matiere(base?.matiere)
+  const I = m.icone
 
   return (
     <Feuille
       ouverte={!!base}
       onFermer={onFermer}
-      titre="Placer dans le cahier journal"
+      titre={<span className="inline-flex items-center gap-2"><CalendarPlus className="size-5 text-bateau" /> Placer</span>}
       pied={
         deja.length ? (
           <>
-            <Bouton variante="secondaire" onClick={() => placer(false)} enCours={ecrire.isPending}>Ajouter à côté</Bouton>
+            <Bouton variante="secondaire" onClick={() => placer(false)} enCours={ecrire.isPending}>À côté</Bouton>
             <Bouton icone={CalendarPlus} onClick={() => placer(true)} enCours={ecrire.isPending}>Remplacer</Bouton>
           </>
         ) : (
@@ -96,51 +104,58 @@ export function Placer({ base, onFermer, marquerEnCours }: {
       }
     >
       <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-3 rounded-2xl bg-white p-3">
-          <PastilleMatiere id={base?.matiere} />
-          <div className="min-w-0">
-            <p className="truncate font-bold">{base?.titre}</p>
-            <p className="text-sm" style={{ color: m.couleur }}>{m.court}</p>
-          </div>
+        <div className="flex items-center gap-3 rounded-[22px] p-3" style={{ background: m.fond }}>
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm" style={{ color: m.couleur }}><I className="size-6" /></span>
+          <p className="min-w-0 flex-1 font-bold leading-snug text-encre">{base?.titre}</p>
         </div>
 
-        <Champ label="Jour">
-          {(id) => <Saisie id={id} type="date" value={date} onChange={(e) => { setDate(e.target.value); setChoix(null) }} />}
-        </Champ>
+        <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Jour">
+          {prochains.map((j) => (
+            <button key={j} type="button" role="radio" aria-checked={!libreDate && date === j} onClick={() => { setLibreDate(false); setDate(j); setChoix(null) }}
+              title={fmtJour(j)}
+              className={clsx('flex w-12 flex-col items-center rounded-2xl py-1.5 leading-none transition', !libreDate && date === j ? 'bg-encre text-white' : 'bg-white text-encre shadow-sm')}>
+              <span className="font-titre text-lg font-semibold">{format(parseISO(j), 'd')}</span>
+              <span className="mt-0.5 text-[10px] font-bold uppercase opacity-80">{jourCourt(j)}</span>
+            </button>
+          ))}
+          <button type="button" onClick={() => setLibreDate(true)} aria-label="Autre date" title="Autre date"
+            className={clsx('flex w-12 items-center justify-center rounded-2xl transition', libreDate ? 'bg-encre text-white' : 'bg-white text-brume shadow-sm')}>
+            <CalendarDays className="size-5" />
+          </button>
+        </div>
+        {libreDate && <Saisie type="date" value={date} onChange={(e) => { setDate(e.target.value); setChoix(null) }} aria-label="Jour" />}
 
         {ferme ? (
-          <p className="rounded-2xl bg-ambre-clair px-4 py-3 text-sm font-bold text-ambre-fonce">
-            {vac ? `Vacances : ${vac.nom}` : 'Pas de classe ce jour-là'}
+          <p className="flex items-center gap-2 rounded-2xl bg-ambre-clair px-4 py-3 font-bold text-ambre-fonce">
+            <Sun className="size-5" /> {vac ? vac.nom : 'Pas classe'}
           </p>
         ) : creneaux.length ? (
-          <div className="flex flex-col gap-1.5" role="radiogroup" aria-label="Créneau">
+          <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Créneau">
             {creneaux.map((c) => {
               const pris = occupes(c.debut)
               const actif = choix === c.id
-              const memeMatiere = c.matiere === base?.matiere
+              const cm = matiere(c.matiere)
+              const CI = cm.icone
               return (
-                <button
-                  key={c.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={actif}
-                  onClick={() => setChoix(c.id)}
-                  className={clsx('flex items-center gap-3 rounded-2xl border-2 bg-white px-3 py-2 text-left transition',
-                    actif ? 'border-bateau' : 'border-transparent hover:border-trait')}
-                >
-                  <span className="w-12 shrink-0 text-sm font-bold tabular-nums text-brume">{fmtHeure(c.debut)}</span>
-                  <PastilleMatiere id={c.matiere} taille="s" />
-                  <span className={clsx('min-w-0 flex-1 truncate', memeMatiere && 'font-bold')}>{c.libelle ?? matiere(c.matiere).court}</span>
-                  {pris.length > 0 && <Badge couleur="ambre">{pris[0].titre || 'Déjà prévu'}</Badge>}
-                  {actif && <Check className="size-5 text-bateau" />}
+                <button key={c.id} type="button" role="radio" aria-checked={actif} onClick={() => setChoix(c.id)}
+                  className={clsx('relative flex items-center gap-2.5 rounded-2xl p-2 text-left transition', actif ? 'ring-[3px] ring-encre' : 'hover:brightness-95',
+                    c.matiere !== base?.matiere && !actif && 'opacity-60')}
+                  style={{ background: cm.fond }}>
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white" style={{ color: cm.couleur }}><CI className="size-5" /></span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-xs font-bold tabular-nums" style={{ color: cm.couleur }}>{fmtHeure(c.debut)}</span>
+                    <span className="block truncate text-sm font-bold text-encre">{pris[0]?.titre || c.libelle || cm.court}</span>
+                  </span>
+                  {pris.length > 0 && <span className="size-2.5 shrink-0 rounded-full bg-ambre" title="Déjà rempli" />}
+                  {actif && <Check className="size-5 shrink-0 text-encre" />}
                 </button>
               )
             })}
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">
-            <Champ label="Début">{(id) => <Saisie id={id} type="time" value={debutLibre} onChange={(e) => setDebutLibre(e.target.value)} />}</Champ>
-            <Champ label="Fin">{(id) => <Saisie id={id} type="time" value={finLibre} onChange={(e) => setFinLibre(e.target.value)} />}</Champ>
+            <Saisie type="time" value={debutLibre} onChange={(e) => setDebutLibre(e.target.value)} aria-label="Début" />
+            <Saisie type="time" value={finLibre} onChange={(e) => setFinLibre(e.target.value)} aria-label="Fin" />
           </div>
         )}
       </div>

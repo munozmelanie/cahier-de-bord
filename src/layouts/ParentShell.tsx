@@ -62,9 +62,10 @@ export function ParentShell() {
             const Icone = o.icone
             return (
               <NavLink key={o.to} to={o.to} end={o.fin}
-                className={({ isActive }) => clsx('flex flex-1 items-center justify-center gap-1.5 rounded-full py-2 text-sm font-bold transition',
+                aria-label={o.label} title={o.label}
+                className={({ isActive }) => clsx('relative flex flex-1 items-center justify-center gap-1.5 rounded-full py-2.5 text-sm font-bold transition',
                   isActive ? 'bg-white text-bateau shadow-sm' : 'text-brume hover:text-encre')}>
-                <Icone className="size-4" /> {o.label}
+                <Icone className="size-5" />
                 {o.to === '/carnet' && nonLus > 0 && <span className="rounded-full bg-alerte px-1.5 text-[10px] leading-4 text-white">{nonLus}</span>}
               </NavLink>
             )
@@ -82,10 +83,10 @@ export function ParentShell() {
             const Icone = o.icone
             return (
               <NavLink key={o.to} to={o.to} end={o.fin}
-                className={({ isActive }) => clsx('relative flex flex-col items-center gap-0.5 py-2 text-[11px] font-bold', isActive ? 'text-bateau' : 'text-brume')}>
+                aria-label={o.label}
+                className={({ isActive }) => clsx('relative mx-auto my-1.5 flex size-12 items-center justify-center rounded-2xl transition', isActive ? 'bg-bateau text-white' : 'text-brume')}>
                 <Icone className="size-6" />
-                {o.label}
-                {o.to === '/carnet' && nonLus > 0 && <span className="absolute right-[22%] top-1 rounded-full bg-alerte px-1.5 text-[10px] leading-4 text-white">{nonLus}</span>}
+                {o.to === '/carnet' && nonLus > 0 && <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-alerte px-1 text-center text-[11px] font-bold leading-5 text-white">{nonLus}</span>}
               </NavLink>
             )
           })}

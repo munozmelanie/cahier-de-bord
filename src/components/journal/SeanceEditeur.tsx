@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import { Check, CircleDashed, Copy, Monitor, Plus, Printer, Scissors, Trash2, Users2, X, type LucideIcon } from 'lucide-react'
+import { BookCheck, Check, CircleDashed, Copy, Monitor, Plus, Printer, Scissors, Trash2, Users2, X, type LucideIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useDevoirsDonnes, useEcrire } from '../../lib/donnees'
 import { hhmm } from '../../lib/dates'
@@ -73,7 +73,7 @@ export function SeanceEditeur({ base, onFermer }: { base: BrouillonSeance | null
     if (!s) return
     const { id, ...reste } = s
     setS({ ...reste, statut: 'prevue' })
-    toast('Copie prête : change la date ou l\'heure puis enregistre')
+    toast('Copie prête')
   }
   async function ajouterDevoir() {
     const id = s?.id ?? (await enregistrer(false))
@@ -82,7 +82,7 @@ export function SeanceEditeur({ base, onFermer }: { base: BrouillonSeance | null
 
   return (
     <>
-      <Feuille ouverte onFermer={onFermer} large titre={s.id ? 'Séance' : 'Nouvelle séance'}
+      <Feuille ouverte onFermer={onFermer} large titre={s.id ? (s.titre || 'Séance') : 'Nouvelle séance'}
         pied={<>
           {s.id && <BoutonIcone icone={Trash2} label="Supprimer" onClick={supprimer} className="mr-auto text-alerte" />}
           {s.id && <BoutonIcone icone={Copy} label="Dupliquer" onClick={dupliquer} />}
@@ -95,9 +95,9 @@ export function SeanceEditeur({ base, onFermer }: { base: BrouillonSeance | null
               const Icone = st.icone
               const actif = (s.statut ?? 'prevue') === st.id
               return (
-                <button key={st.id} type="button" onClick={() => maj({ statut: st.id })}
-                  className={clsx('inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-bold', actif ? st.classe : 'border border-trait bg-white text-brume')}>
-                  <Icone className="size-4" /> {st.label}
+                <button key={st.id} type="button" onClick={() => maj({ statut: st.id })} aria-label={st.label} title={st.label}
+                  className={clsx('flex size-10 items-center justify-center rounded-full', actif ? st.classe : 'border border-trait bg-white text-brume')}>
+                  <Icone className="size-5" />
                 </button>
               )
             })}
@@ -106,17 +106,17 @@ export function SeanceEditeur({ base, onFermer }: { base: BrouillonSeance | null
           <ChoixMatiere valeur={s.matiere ?? null} onChange={(m) => maj({ matiere: m })} />
 
           <div className="grid grid-cols-[1fr_auto_auto] gap-3">
-            <Champ label="Titre">{(id) => <Saisie id={id} value={s.titre ?? ''} onChange={(e) => maj({ titre: e.target.value })} placeholder="CONJ 6 : l'imparfait" />}</Champ>
+            <Champ label="Titre">{(id) => <Saisie id={id} value={s.titre ?? ''} onChange={(e) => maj({ titre: e.target.value })} />}</Champ>
             <Champ label="Début">{(id) => <Saisie id={id} type="time" value={hhmm(s.debut)} onChange={(e) => maj({ debut: e.target.value })} className="w-28" />}</Champ>
             <Champ label="Fin">{(id) => <Saisie id={id} type="time" value={hhmm(s.fin)} onChange={(e) => maj({ fin: e.target.value })} className="w-28" />}</Champ>
           </div>
 
           <Champ label="Objectif">{(id) => <Texte id={id} value={s.objectif ?? ''} onChange={(e) => maj({ objectif: e.target.value })} />}</Champ>
-          <Champ label="Déroulé">{(id) => <Texte id={id} rows={4} value={s.deroule ?? ''} onChange={(e) => maj({ deroule: e.target.value })} placeholder={'1. Découverte\n2. Recherche\n3. Mise en commun'} />}</Champ>
-          <Champ label="Matériel et supports">{(id) => <Texte id={id} value={s.materiel ?? ''} onChange={(e) => maj({ materiel: e.target.value })} placeholder="Manuel p.13, mémo p.2" />}</Champ>
+          <Champ label="Déroulé">{(id) => <Texte id={id} rows={4} value={s.deroule ?? ''} onChange={(e) => maj({ deroule: e.target.value })} />}</Champ>
+          <Champ label="Matériel">{(id) => <Texte id={id} value={s.materiel ?? ''} onChange={(e) => maj({ materiel: e.target.value })} />}</Champ>
 
           <div className="flex flex-col gap-2">
-            <p className="text-sm font-bold">À préparer</p>
+            <p className="flex items-center gap-1.5 text-sm font-bold"><Printer className="size-4 text-bateau" /> À préparer</p>
             {aFaire.map((a, i) => {
               const Icone = iconeAFaire(a.type)
               return (
@@ -136,28 +136,28 @@ export function SeanceEditeur({ base, onFermer }: { base: BrouillonSeance | null
               if (!nouvelAFaire.trim()) return
               maj({ a_faire: [...aFaire, { label: nouvelAFaire.trim(), type: 'imprimer' }] }); setNouvelAFaire('')
             }}>
-              <Saisie value={nouvelAFaire} onChange={(e) => setNouvelAFaire(e.target.value)} placeholder="Imprimer la fiche (22 ex.)" aria-label="Ajouter une chose à préparer" />
+              <Saisie value={nouvelAFaire} onChange={(e) => setNouvelAFaire(e.target.value)} aria-label="Ajouter une chose à préparer" />
               <BoutonIcone type="submit" icone={Plus} label="Ajouter" variante="doux" />
             </form>
           </div>
 
           <div className="flex flex-col gap-3 rounded-3xl bg-white p-4">
-            <Bascule actif={dansResume} onChange={(v) => maj({ pour_familles: v ? '' : '-' })} label="Dans le résumé pour les familles" />
+            <Bascule actif={dansResume} onChange={(v) => maj({ pour_familles: v ? '' : '-' })} label="Résumé familles" />
             {dansResume && (
               <Saisie value={s.pour_familles ?? ''} onChange={(e) => maj({ pour_familles: e.target.value })}
-                placeholder={s.titre || 'Une phrase simple pour les familles'} aria-label="Phrase pour les familles" />
+                placeholder={s.titre} aria-label="Phrase pour les familles" />
             )}
           </div>
 
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-bold">Devoirs donnés</p>
-              <Bouton taille="s" variante="doux" icone={Plus} onClick={ajouterDevoir}>Devoir</Bouton>
+              <p className="flex items-center gap-1.5 text-sm font-bold"><BookCheck className="size-4 text-succes" /> Devoirs</p>
+              <BoutonIcone icone={Plus} label="Ajouter un devoir" variante="doux" className="size-9" onClick={ajouterDevoir} />
             </div>
             {devoirsSeance.map((d) => <LigneDevoir key={d.id} d={d} onClick={() => setDevoir(d)} />)}
           </div>
 
-          <Champ label="Bilan">{(id) => <Texte id={id} value={s.bilan ?? ''} onChange={(e) => maj({ bilan: e.target.value })} placeholder="Ce qui a marché, ce qui reste à revoir" />}</Champ>
+          <Champ label="Bilan">{(id) => <Texte id={id} value={s.bilan ?? ''} onChange={(e) => maj({ bilan: e.target.value })} />}</Champ>
         </div>
       </Feuille>
       <DevoirEditeur base={devoir} onFermer={() => setDevoir(null)} />

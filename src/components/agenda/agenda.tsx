@@ -1,6 +1,6 @@
 import clsx from 'clsx'
-import { Bus, ClipboardCheck, Info, PartyPopper, TreePalm, Users, type LucideIcon } from 'lucide-react'
-import { fmtJourCourt, fmtJourSemaine, fmtMois, fmtNumero } from '../../lib/dates'
+import { Bus, ClipboardCheck, EyeOff, Info, PartyPopper, TreePalm, Users, type LucideIcon } from 'lucide-react'
+import { fmtJourCourt, fmtMois } from '../../lib/dates'
 import type { EvenementAgenda, Reglages } from '../../lib/types'
 
 export type TypeAgenda = EvenementAgenda['type']
@@ -21,7 +21,7 @@ export type ElementAgenda = { cle: string; date: string; fin: string | null; tit
 export function avecVacances(evs: EvenementAgenda[], r: Reglages | undefined): ElementAgenda[] {
   const liste: ElementAgenda[] = evs.map((e) => ({ cle: e.id, date: e.date, fin: e.fin, titre: e.titre, details: e.details, heure: e.heure, type: e.type, ev: e }))
   for (const v of r?.vacances ?? []) {
-    liste.push({ cle: `vac-${v.debut}`, date: v.debut, fin: v.fin, titre: `Vacances : ${v.nom}`, details: null, heure: null, type: 'vacances' })
+    liste.push({ cle: `vac-${v.debut}`, date: v.debut, fin: v.fin, titre: v.nom, details: null, heure: null, type: 'vacances' })
   }
   return liste.sort((a, b) => a.date.localeCompare(b.date) || a.titre.localeCompare(b.titre))
 }
@@ -38,29 +38,33 @@ export function parMois(liste: ElementAgenda[]) {
   return g
 }
 
-export function plage(e: { date: string; fin: string | null }) {
-  if (!e.fin || e.fin === e.date) return fmtJourSemaine(e.date)
-  return `du ${fmtJourCourt(e.date)} au ${fmtJourCourt(e.fin)}`
-}
+export const couvre = (e: { date: string; fin: string | null }, jour: string) => e.date <= jour && jour <= (e.fin ?? e.date)
 
+/** Un événement en carte pastel (couleur du type) */
 export function CarteEvenement({ e, onClick, attenue, masque }: { e: ElementAgenda; onClick?: () => void; attenue?: boolean; masque?: boolean }) {
   const t = TYPES_AGENDA[e.type]
   const Icone = t.icone
+  const plusieursJours = e.fin && e.fin !== e.date
   const Contenu = (
     <>
-      <span className="flex w-12 shrink-0 flex-col items-center rounded-2xl py-1.5" style={{ background: t.fond, color: t.couleur }}>
-        <span className="font-titre text-2xl font-semibold leading-none">{fmtNumero(e.date)}</span>
-        <Icone className="mt-1 size-4" strokeWidth={2.4} />
+      <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm" style={{ color: t.couleur }} title={t.nom}>
+        <Icone className="size-6" strokeWidth={2.2} />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block font-bold leading-snug text-encre">{e.titre}</span>
-        <span className="block text-sm text-brume first-letter:uppercase">
-          {plage(e)}{e.heure ? ` · ${e.heure}` : ''}{masque ? ' · non visible des familles' : ''}
-        </span>
-        {e.details && <span className="mt-1 block whitespace-pre-wrap text-sm text-encre/80">{e.details}</span>}
+        <span className="line-clamp-2 font-bold leading-snug text-encre">{e.titre}</span>
+        {(e.heure || plusieursJours) && (
+          <span className="mt-0.5 block text-xs font-bold" style={{ color: t.couleur }}>
+            {[e.heure, plusieursJours ? `→ ${fmtJourCourt(e.fin!)}` : null].filter(Boolean).join(' · ')}
+          </span>
+        )}
+        {e.details && <span className="mt-1 line-clamp-2 block text-sm text-encre/75">{e.details}</span>}
       </span>
+      {masque && <EyeOff className="size-4 shrink-0 text-brume" aria-label="Pas visible des familles" />}
     </>
   )
-  const cls = clsx('flex w-full items-start gap-3 rounded-3xl bg-white p-3 text-left shadow-doux', attenue && 'opacity-60', masque && 'border-2 border-dashed border-trait shadow-none')
-  return onClick ? <button onClick={onClick} className={clsx(cls, 'transition hover:ring-2 hover:ring-bateau/30')}>{Contenu}</button> : <div className={cls}>{Contenu}</div>
+  const cls = clsx('flex w-full items-center gap-3 rounded-[22px] p-2.5 text-left', attenue && 'opacity-60', masque && 'border-2 border-dashed border-trait')
+  const style = { background: masque ? '#fff' : t.fond }
+  return onClick
+    ? <button type="button" onClick={onClick} className={clsx(cls, 'transition hover:brightness-[0.98]')} style={style}>{Contenu}</button>
+    : <div className={cls} style={style}>{Contenu}</div>
 }

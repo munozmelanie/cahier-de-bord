@@ -51,15 +51,15 @@ export function ChoixPourLe({ donneLe, valeur, onChange, reglages }: { donneLe: 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       <button type="button" className={puce(!libre && valeur === demain)} onClick={() => { setLibre(false); onChange(demain) }}>
-        Prochain jour · {fmtJourCourt(demain)}
+        {fmtJourCourt(demain)}
       </button>
       <button type="button" className={puce(!libre && valeur === semPro)} onClick={() => { setLibre(false); onChange(semPro) }}>
-        Semaine pro. · {fmtJourCourt(semPro)}
+        {fmtJourCourt(semPro)} <span className="opacity-60">(N+1)</span>
       </button>
       {libre ? (
         <Saisie type="date" value={valeur} onChange={(e) => onChange(e.target.value)} className="w-auto py-1.5" aria-label="Pour le" />
       ) : (
-        <button type="button" className={puce(false)} onClick={() => setLibre(true)}>Autre date</button>
+        <button type="button" className={puce(false)} onClick={() => setLibre(true)} aria-label="Autre date">…</button>
       )}
     </div>
   )

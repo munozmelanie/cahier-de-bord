@@ -1,50 +1,59 @@
-import { BookCheck, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
+import { format, parseISO } from 'date-fns'
+import { fr } from 'date-fns/locale'
 import { useMemo, useState } from 'react'
+import { CalendrierSemaine } from '../../components/CalendrierSemaine'
+import { CarteDevoir } from '../../components/devoirs/CarteDevoir'
 import { DevoirEditeur } from '../../components/devoirs/DevoirEditeur'
-import { LigneDevoir } from '../../components/devoirs/LigneDevoir'
-import { Bouton, Chargement, Entete, Onglets, Vide } from '../../components/ui'
+import { BoutonIcone, Chargement, Entete, NavPas, Onglets } from '../../components/ui'
 import { useDevoirsDonnes, useDevoirsPour } from '../../lib/donnees'
-import { aujourdhui, decaler, estJourClasse, fmtJour, jourClasseSuivant, maj1 } from '../../lib/dates'
+import { aujourdhui, decaler, estJourClasse, iso, jourClasseSuivant, joursSemaine, lundiDe } from '../../lib/dates'
 import { useClasse } from '../../lib/session'
 import type { Devoir } from '../../lib/types'
 
-function grouper(l: Devoir[], cle: 'pour_le' | 'donne_le') {
-  const m = new Map<string, Devoir[]>()
-  for (const d of l) m.set(d[cle], [...(m.get(d[cle]) ?? []), d])
-  return [...m.entries()].sort(([a], [b]) => a.localeCompare(b))
-}
+const lundiCourant = () => iso(lundiDe(new Date(aujourdhui() + 'T12:00:00')))
+const fmtCourt = (s: string) => format(parseISO(s), 'd MMM', { locale: fr })
 
+/** Devoirs en calendrier : « à faire pour » ou « donnés le » chaque jour de la semaine */
 export default function DevoirsProf() {
   const classe = useClasse()
-  const auj = aujourdhui()
+  const [lundi, setLundi] = useState(lundiCourant)
   const [vue, setVue] = useState<'pour' | 'donne'>('pour')
-  const aVenir = useDevoirsPour(auj, decaler(auj, 28))
-  const donnes = useDevoirsDonnes(decaler(auj, -14), decaler(auj, 7))
+  const jours = useMemo(() => joursSemaine(lundi, classe.reglages), [lundi, classe.reglages])
+  const fin = decaler(lundi, 6)
+  const pour = useDevoirsPour(lundi, fin)
+  const donnes = useDevoirsDonnes(lundi, fin)
+  const q = vue === 'pour' ? pour : donnes
   const [edition, setEdition] = useState<(Partial<Devoir> & { donne_le: string }) | null>(null)
+  const auj = aujourdhui()
   const jourDonne = estJourClasse(auj, classe.reglages) ? auj : jourClasseSuivant(auj, classe.reglages)
-  const q = vue === 'pour' ? aVenir : donnes
-  const groupes = useMemo(() => {
-    const g = grouper(q.data ?? [], vue === 'pour' ? 'pour_le' : 'donne_le')
-    return vue === 'donne' ? g.reverse() : g
+
+  const parJour = useMemo(() => {
+    const m = new Map<string, Devoir[]>()
+    for (const d of q.data ?? []) {
+      const k = vue === 'pour' ? d.pour_le : d.donne_le
+      m.set(k, [...(m.get(k) ?? []), d])
+    }
+    return m
   }, [q.data, vue])
 
   return (
     <>
-      <Entete titre="Devoirs" actions={<Bouton icone={Plus} onClick={() => setEdition({ donne_le: jourDonne })}>Devoir</Bouton>} />
-      <div className="mb-5">
-        <Onglets valeur={vue} onChange={setVue} options={[{ id: 'pour', label: 'À faire pour' }, { id: 'donne', label: 'Donnés le' }]} />
-      </div>
-      {q.isLoading ? <Chargement /> : groupes.length ? (
-        <div className="grid gap-4 md:grid-cols-2">
-          {groupes.map(([date, l]) => (
-            <section key={date} className="rounded-3xl bg-white p-4 shadow-doux">
-              <h2 className="mb-2 font-titre text-lg font-semibold">{vue === 'pour' ? `Pour ${fmtJour(date)}` : maj1(fmtJour(date))}</h2>
-              {l.map((d) => <LigneDevoir key={d.id} d={d} mode={vue === 'pour' ? 'donne' : 'pour'} onClick={() => setEdition(d)} />)}
-            </section>
+      <Entete titre="Devoirs" actions={<>
+        <Onglets valeur={vue} onChange={setVue} options={[{ id: 'pour', label: 'À faire' }, { id: 'donne', label: 'Donnés' }]} />
+        <NavPas label={fmtCourt(lundi)} precedent={() => setLundi(decaler(lundi, -7))} suivant={() => setLundi(decaler(lundi, 7))} auMilieu={() => setLundi(lundiCourant())} />
+        <BoutonIcone icone={Plus} label="Nouveau devoir" variante="primaire" onClick={() => setEdition({ donne_le: jourDonne })} />
+      </>} />
+      {q.isLoading ? <Chargement /> : (
+        <CalendrierSemaine
+          jours={jours}
+          reglages={classe.reglages}
+          compte={(j) => parJour.get(j)?.length ?? 0}
+          actionJour={vue === 'donne' ? (j) => <BoutonIcone icone={Plus} label="Ajouter un devoir ce jour" className="size-8" onClick={() => setEdition({ donne_le: j })} /> : undefined}
+          rendu={(j) => (parJour.get(j) ?? []).map((d) => (
+            <CarteDevoir key={d.id} d={d} montrer={vue === 'pour' ? 'donne' : 'pour'} statut onClick={() => setEdition(d)} />
           ))}
-        </div>
-      ) : (
-        <Vide icone={BookCheck} texte="Aucun devoir" action={<Bouton icone={Plus} onClick={() => setEdition({ donne_le: jourDonne })}>Devoir</Bouton>} />
+        />
       )}
       <DevoirEditeur base={edition} onFermer={() => setEdition(null)} />
     </>

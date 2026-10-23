@@ -1,17 +1,18 @@
-import clsx from 'clsx'
-import { BookCheck, CalendarPlus, Check, Plus, Sparkles, X } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
-import { useDevoirsDonnes, useDevoirsPour, useEcrire, useRafraichir, useSeances } from '../../lib/donnees'
-import { aujourdhui, estJourClasse, fmtHeure, jourClasseSuivant, quand, vacancesDe } from '../../lib/dates'
-import { useClasse } from '../../lib/session'
+import { BookCheck, CalendarPlus, Coffee, MessagesSquare, Plus, Printer, Send, Sparkles, Sun } from 'lucide-react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
+import { useDevoirsDonnes, useEcrire, useEdt, useLectures, useMessages, useRafraichir, useSeances } from '../../lib/donnees'
+import { aujourdhui, estJourClasse, fmtHeure, minutes, numJour, periodeDe, vacancesDe } from '../../lib/dates'
+import { useClasse, useSession } from '../../lib/session'
 import type { Devoir, Seance } from '../../lib/types'
 import { AssistantIA, type DemandeIA } from '../AssistantIA'
+import { CarteInfo } from '../CarteInfo'
+import { CarteDevoir } from '../devoirs/CarteDevoir'
 import { DevoirEditeur } from '../devoirs/DevoirEditeur'
-import { LigneDevoir } from '../devoirs/LigneDevoir'
 import { ResumeCarte } from '../resume/ResumeCarte'
-import { Bouton, BoutonIcone, Chargement, PastilleMatiere, Vide, useToast } from '../ui'
+import { Bouton, BoutonIcone, Chargement, Entete, Vide, useToast } from '../ui'
+import { CarteSeance } from './CarteSeance'
 import { remplirDepuisEdt, seanceEnCours, trierSeances } from './outils'
-import { Ruban } from './Ruban'
 import { iconeAFaire, SeanceEditeur, type BrouillonSeance } from './SeanceEditeur'
 
 function useMaintenant() {
@@ -20,55 +21,46 @@ function useMaintenant() {
   return m
 }
 
-export function LigneSeance({ s, enCours, onOuvrir, onStatut }: { s: Seance; enCours?: boolean; onOuvrir: () => void; onStatut: (st: Seance['statut']) => void }) {
-  const nonFaite = s.statut === 'non_faite'
-  const faite = s.statut === 'faite'
-  const detail = s.materiel || s.objectif
+/** Barre d'outils de la journée : icônes seules */
+export function OutilsJournee({ onNouvelle, onRemplir, onIa, remplissage }: { onNouvelle: () => void; onRemplir: () => void; onIa: () => void; remplissage?: boolean }) {
   return (
-    <li className={clsx('group flex items-center gap-3 rounded-2xl px-2 py-2 transition', enCours ? 'bg-white shadow-doux ring-2 ring-bateau' : 'hover:bg-white')}>
-      <span className="w-12 shrink-0 text-right text-sm font-bold tabular-nums text-brume">{fmtHeure(s.debut)}</span>
-      <button type="button" onClick={onOuvrir} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-        <PastilleMatiere id={s.matiere} />
-        <span className="min-w-0 flex-1">
-          <span className={clsx('block font-bold leading-snug', nonFaite && 'text-brume line-through')}>{s.titre || 'Sans titre'}</span>
-          {detail && <span className="block truncate text-sm text-brume">{detail}</span>}
-        </span>
-        {s.a_faire?.length > 0 && (
-          <span className="hidden items-center gap-1 text-bateau sm:flex" title={s.a_faire.map((a) => a.label).join(', ')}>
-            {s.a_faire.slice(0, 3).map((a, i) => { const I = iconeAFaire(a.type); return <I key={i} className="size-4" /> })}
-          </span>
-        )}
-      </button>
-      <span className="flex shrink-0 gap-1">
-        <BoutonIcone icone={Check} label="Faite" className={clsx('size-9', faite ? 'bg-succes text-white hover:bg-succes' : 'text-brume')} onClick={() => onStatut(faite ? 'prevue' : 'faite')} />
-        <BoutonIcone icone={X} label="Pas faite" className={clsx('size-9', nonFaite ? 'bg-alerte text-white hover:bg-alerte' : 'text-brume')} onClick={() => onStatut(nonFaite ? 'prevue' : 'non_faite')} />
-      </span>
-    </li>
+    <div className="flex items-center gap-2">
+      <BoutonIcone icone={Sparkles} label="Remplir avec ChatGPT" variante="secondaire" onClick={onIa} />
+      <BoutonIcone icone={CalendarPlus} label="Remplir depuis l'emploi du temps" variante="secondaire" onClick={onRemplir} disabled={remplissage} />
+      <BoutonIcone icone={Plus} label="Nouvelle séance" variante="primaire" onClick={onNouvelle} />
+    </div>
   )
 }
 
-/** Une journée de classe : déroulé, devoirs, à préparer, résumé pour les familles */
-export function Journee({ date, ruban = true }: { date: string; ruban?: boolean }) {
+/** Une journée : les séances en cartes (avec les pauses), et à côté les cartes devoirs, à préparer, résumé */
+export function Journee({ date, titre, sousTitre, actions, retour }: { date: string; titre: ReactNode; sousTitre?: ReactNode; actions?: ReactNode; retour?: ReactNode }) {
   const classe = useClasse()
+  const { userId } = useSession()
   const toast = useToast()
   const ecrire = useEcrire()
   const rafraichir = useRafraichir()
   const maintenant = useMaintenant()
   const seances = useSeances(date, date)
   const donnes = useDevoirsDonnes(date, date)
-  const demain = jourClasseSuivant(date, classe.reglages)
-  const pourDemain = useDevoirsPour(demain, demain)
+  const periode = periodeDe(date, classe.reglages)
+  const edt = useEdt(periode?.id)
+  const msgs = useMessages()
+  const lect = useLectures()
   const [edition, setEdition] = useState<BrouillonSeance | null>(null)
   const [devoir, setDevoir] = useState<(Partial<Devoir> & { donne_le: string }) | null>(null)
   const [ia, setIa] = useState<DemandeIA | null>(null)
   const [remplissage, setRemplissage] = useState(false)
 
   const liste = useMemo(() => trierSeances(seances.data ?? []), [seances.data])
+  const pauses = useMemo(() => (edt.data ?? []).filter((c) => c.type === 'pause' && c.jour === numJour(date)), [edt.data, date])
   const estAujourdhui = date === aujourdhui()
   const enCours = estAujourdhui ? seanceEnCours(liste, maintenant) : null
-  const mn = estAujourdhui ? maintenant.getHours() * 60 + maintenant.getMinutes() : null
   const aFaire = liste.flatMap((s) => (s.a_faire ?? []).map((a) => ({ ...a, seance: s })))
   const vacances = vacancesDe(date, classe.reglages)
+  const aLire = useMemo(() => {
+    const lus = new Set((lect.data ?? []).filter((l) => l.user_id === userId).map((l) => l.message_id))
+    return (msgs.data ?? []).filter((m) => m.auteur_role === 'parent' && !lus.has(m.id)).length
+  }, [msgs.data, lect.data, userId])
 
   async function statut(s: Seance, st: Seance['statut']) {
     await ecrire.mutateAsync({ op: 'update', table: 'seances', id: s.id, patch: { statut: st } })
@@ -86,66 +78,95 @@ export function Journee({ date, ruban = true }: { date: string; ruban?: boolean 
     setEdition({ date, debut: derniere?.fin ?? '08:45', statut: 'prevue', a_faire: [] })
   }
 
-  if (seances.isLoading) return <Chargement />
 
-  const colonneDroite = (
-    <div className="flex flex-col gap-4">
-      <section className="rounded-3xl bg-white p-4 shadow-doux">
-        <div className="mb-2 flex items-center justify-between">
-          <h2 className="font-titre text-lg font-semibold">Devoirs donnés</h2>
-          <BoutonIcone icone={Plus} label="Ajouter un devoir" variante="doux" className="size-9" onClick={() => setDevoir({ donne_le: date })} />
-        </div>
-        {(donnes.data ?? []).length ? (donnes.data ?? []).map((d) => <LigneDevoir key={d.id} d={d} onClick={() => setDevoir(d)} />)
-          : <p className="text-sm text-brume">Aucun.</p>}
-      </section>
-      {(pourDemain.data ?? []).length > 0 && (
-        <section className="rounded-3xl bg-white p-4 shadow-doux">
-          <h2 className="mb-2 font-titre text-lg font-semibold">Pour {quand(demain, date)}</h2>
-          {(pourDemain.data ?? []).map((d) => <LigneDevoir key={d.id} d={d} mode="donne" statut={false} />)}
-        </section>
-      )}
-      {aFaire.length > 0 && (
-        <section className="rounded-3xl bg-white p-4 shadow-doux">
-          <h2 className="mb-2 font-titre text-lg font-semibold">À préparer</h2>
-          <ul className="flex flex-col gap-2">
-            {aFaire.map((a, i) => {
-              const I = iconeAFaire(a.type)
-              return (
-                <li key={i} className="flex items-center gap-2 text-sm">
-                  <I className="size-4 shrink-0 text-bateau" />
-                  {a.lien ? <a href={a.lien} target="_blank" rel="noreferrer" className="font-bold underline">{a.label}</a> : <span className="font-bold">{a.label}</span>}
-                  <span className="ml-auto shrink-0 text-xs text-brume">{fmtHeure(a.seance.debut)}</span>
-                </li>
-              )
-            })}
-          </ul>
-        </section>
-      )}
-      <ResumeCarte date={date} seances={liste} devoirs={donnes.data ?? []} />
-    </div>
-  )
+  // Séances et pauses dans l'ordre de la journée
+  const fil: ({ t: 'seance'; s: Seance } | { t: 'pause'; libelle: string; debut: string })[] = [
+    ...liste.map((s) => ({ t: 'seance' as const, s })),
+    ...(liste.length ? pauses.map((p) => ({ t: 'pause' as const, libelle: p.libelle ?? 'Pause', debut: p.debut })) : []),
+  ].sort((a, b) => minutes(a.t === 'seance' ? a.s.debut : a.debut) - minutes(b.t === 'seance' ? b.s.debut : b.debut))
+
+  const devoirsDuJour = donnes.data ?? []
 
   return (
     <>
-      {ruban && liste.length > 0 && <div className="mb-5"><Ruban seances={liste} maintenant={mn} onChoisir={(s) => setEdition(s)} /></div>}
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <Entete titre={titre} sousTitre={sousTitre} retour={retour}
+        actions={<>{actions}<OutilsJournee onNouvelle={nouvelle} onRemplir={remplir} onIa={() => setIa({ type: 'journee', date })} remplissage={remplissage} /></>} />
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <section className="min-w-0">
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            <Bouton taille="s" icone={Plus} onClick={nouvelle}>Séance</Bouton>
-            <Bouton taille="s" variante="secondaire" icone={CalendarPlus} onClick={remplir} enCours={remplissage}>Depuis l'emploi du temps</Bouton>
-            <Bouton taille="s" variante="secondaire" icone={Sparkles} onClick={() => setIa({ type: 'journee', date })}>ChatGPT</Bouton>
+          {/* Téléphone : les petites cartes résumées en une ligne, un tap y descend */}
+          <div className="mb-3 flex gap-2 lg:hidden">
+            {[
+              aLire > 0 && { id: 'carte-messages', i: MessagesSquare, c: '#E5484D', f: '#FDE7E8', n: aLire, l: 'Messages' },
+              { id: 'carte-preparer', i: Printer, c: '#2E5BFF', f: '#E6ECFF', n: aFaire.length, l: 'À préparer' },
+              { id: 'carte-devoirs', i: BookCheck, c: '#13A35B', f: '#E1F6EA', n: devoirsDuJour.length, l: 'Devoirs' },
+              { id: 'carte-resume', i: Send, c: '#7B4DFF', f: '#EEE8FF', n: '', l: 'Résumé' },
+            ].filter(Boolean).map((x) => {
+              const v = x as { id: string; i: typeof Printer; c: string; f: string; n: number | string; l: string }
+              return (
+                <button key={v.id} type="button" aria-label={v.l} onClick={() => document.getElementById(v.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl py-2 font-titre text-lg font-semibold" style={{ background: v.f, color: v.c }}>
+                  <v.i className="size-5" />{v.n}
+                </button>
+              )
+            })}
           </div>
-          {liste.length ? (
-            <ul className="flex flex-col gap-1">
-              {liste.map((s) => <LigneSeance key={s.id} s={s} enCours={enCours?.id === s.id} onOuvrir={() => setEdition(s)} onStatut={(st) => statut(s, st)} />)}
-            </ul>
+          {seances.isLoading ? <Chargement /> : liste.length ? (
+            <div className="flex flex-col gap-2">
+              {fil.map((x, i) => x.t === 'seance' ? (
+                <CarteSeance key={x.s.id} s={x.s} enCours={enCours?.id === x.s.id} onOuvrir={() => setEdition(x.s)} onStatut={(st) => statut(x.s, st)} />
+              ) : (
+                <div key={`p${i}`} className="flex items-center gap-2 px-3 py-0.5 text-xs font-bold text-brume/80" title={x.libelle}>
+                  <Coffee className="size-4" /> <span className="tabular-nums">{fmtHeure(x.debut)}</span>
+                  <span className="h-px flex-1 bg-trait" />
+                </div>
+              ))}
+            </div>
           ) : vacances || !estJourClasse(date, classe.reglages) ? (
-            <Vide icone={BookCheck} texte={vacances ? `Vacances : ${vacances.nom}` : 'Pas classe ce jour-là'} />
+            <Vide icone={Sun} texte={vacances ? vacances.nom : 'Pas classe'} />
           ) : (
-            <Vide icone={CalendarPlus} texte="Journée vide" action={<Bouton icone={CalendarPlus} onClick={remplir} enCours={remplissage}>Remplir depuis l'emploi du temps</Bouton>} />
+            <Vide icone={CalendarPlus} texte="Journée vide" action={
+              <div className="flex gap-2">
+                <Bouton icone={CalendarPlus} onClick={remplir} enCours={remplissage}>Emploi du temps</Bouton>
+                <Bouton variante="secondaire" icone={Sparkles} onClick={() => setIa({ type: 'journee', date })}>ChatGPT</Bouton>
+              </div>
+            } />
           )}
         </section>
-        {colonneDroite}
+
+        <div className="flex flex-col gap-4">
+          {aLire > 0 && (
+            <Link to="/carnet" className="block" id="carte-messages">
+              <CarteInfo icone={MessagesSquare} couleur="#E5484D" fond="#FDE7E8" nombre={aLire} titre="Messages des familles" />
+            </Link>
+          )}
+
+          <div id="carte-preparer" className="scroll-mt-4"><CarteInfo icone={Printer} couleur="#2E5BFF" fond="#E6ECFF" nombre={aFaire.length} titre="À préparer">
+            {aFaire.length > 0 && (
+              <ul className="flex flex-col gap-2">
+                {aFaire.map((a, i) => {
+                  const I = iconeAFaire(a.type)
+                  return (
+                    <li key={i} className="flex items-center gap-2 text-sm font-bold">
+                      <I className="size-4 shrink-0 text-bateau" />
+                      {a.lien ? <a href={a.lien} target="_blank" rel="noreferrer" className="underline">{a.label}</a> : <span>{a.label}</span>}
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </CarteInfo></div>
+
+          <div id="carte-devoirs" className="scroll-mt-4"><CarteInfo icone={BookCheck} couleur="#13A35B" fond="#E1F6EA" nombre={devoirsDuJour.length} titre="Devoirs donnés"
+            action={<BoutonIcone icone={Plus} label="Ajouter un devoir" variante="doux" className="size-9" onClick={() => setDevoir({ donne_le: date })} />}>
+            {devoirsDuJour.length > 0 && (
+              <div className="flex flex-col gap-2">
+                {devoirsDuJour.map((d) => <CarteDevoir key={d.id} d={d} montrer="pour" onClick={() => setDevoir(d)} />)}
+              </div>
+            )}
+          </CarteInfo></div>
+
+          <div id="carte-resume" className="scroll-mt-4"><ResumeCarte date={date} seances={liste} devoirs={devoirsDuJour} /></div>
+        </div>
       </div>
       <SeanceEditeur base={edition} onFermer={() => setEdition(null)} />
       <DevoirEditeur base={devoir} onFermer={() => setDevoir(null)} />
@@ -153,4 +174,3 @@ export function Journee({ date, ruban = true }: { date: string; ruban?: boolean 
     </>
   )
 }
-

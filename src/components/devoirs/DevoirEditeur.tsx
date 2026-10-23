@@ -48,7 +48,7 @@ export function DevoirEditeur({ base, onFermer }: { base: Brouillon | null; onFe
         <Bouton onClick={enregistrer} enCours={ecrire.isPending} disabled={!d.texte?.trim()}>Enregistrer</Bouton>
       </>}>
       <div className="flex flex-col gap-4">
-        <Champ label="Devoir">{(id) => <Texte id={id} autoFocus value={d.texte ?? ''} onChange={(e) => maj({ texte: e.target.value })} placeholder="Apprendre la leçon CONJ 6" />}</Champ>
+        <Champ label="Devoir">{(id) => <Texte id={id} autoFocus value={d.texte ?? ''} onChange={(e) => maj({ texte: e.target.value })} />}</Champ>
         <Champ label="Pour le">{() => <ChoixPourLe donneLe={d.donne_le} valeur={d.pour_le!} onChange={(v) => maj({ pour_le: v })} reglages={classe.reglages} />}</Champ>
         <Champ label="Type">{() => <ChoixType valeur={(d.type ?? 'travail') as TypeDevoir} onChange={(t) => maj({ type: t })} />}</Champ>
         <Champ label="Matière">{() => <ChoixMatiere valeur={d.matiere ?? null} onChange={(m) => maj({ matiere: m })} />}</Champ>

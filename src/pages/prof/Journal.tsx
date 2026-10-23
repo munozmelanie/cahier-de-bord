@@ -1,23 +1,22 @@
-import clsx from 'clsx'
-import { CalendarDays, CalendarPlus, Printer, Sparkles } from 'lucide-react'
+import { CalendarDays, CalendarPlus, Maximize2, Printer, Sparkles } from 'lucide-react'
+import { format, parseISO } from 'date-fns'
+import { fr } from 'date-fns/locale'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AssistantIA, type DemandeIA } from '../../components/AssistantIA'
+import { CalendrierSemaine } from '../../components/CalendrierSemaine'
+import { CarteSeance } from '../../components/journal/CarteSeance'
 import { Journee } from '../../components/journal/Journee'
 import { imprimerCahierJournal } from '../../components/journal/impression'
 import { remplirDepuisEdt, trierSeances } from '../../components/journal/outils'
-import { Badge, Bouton, Chargement, Entete, NavPas, PastilleMatiere, useToast } from '../../components/ui'
+import { Badge, BoutonIcone, Chargement, Entete, NavPas, useToast } from '../../components/ui'
 import { useDevoirsDonnes, useRafraichir, useSeances } from '../../lib/donnees'
-import {
-  aujourdhui, decaler, estJourClasse, fmtHeure, fmtJour, fmtJourCourt, fmtJourSemaine, fmtNumero, iso, jourClasseSuivant,
-  joursSemaine, lundiDe, maj1, periodeDe, semaineDansPeriode, vacancesDe,
-} from '../../lib/dates'
+import { aujourdhui, decaler, estJourClasse, fmtJour, iso, jourClasseSuivant, joursSemaine, lundiDe, maj1, periodeDe, semaineDansPeriode } from '../../lib/dates'
 import { useClasse } from '../../lib/session'
 import type { Seance } from '../../lib/types'
-import { format, parseISO } from 'date-fns'
-import { fr } from 'date-fns/locale'
 
 const fmtCourtSansJour = (s: string) => format(parseISO(s), 'd MMM', { locale: fr })
+const lundiCourant = () => iso(lundiDe(new Date(aujourdhui() + 'T12:00:00')))
 
 export default function Journal() {
   const { date } = useParams()
@@ -29,25 +28,24 @@ function VueJour({ date }: { date: string }) {
   const nav = useNavigate()
   const periode = periodeDe(date, classe.reglages)
   return (
-    <>
-      <Entete
-        retour={<Link to={`/journal?semaine=${iso(lundiDe(new Date(date + 'T12:00:00')))}`} className="mb-1 inline-flex items-center gap-1 text-sm font-bold text-bateau"><CalendarDays className="size-4" /> Semaine</Link>}
-        titre={maj1(fmtJour(date))}
-        sousTitre={periode ? <Badge>{periode.id} · semaine {semaineDansPeriode(date, periode)}</Badge> : undefined}
-        actions={<NavPas label="Jour" precedent={() => nav(`/journal/${jourClasseSuivant(date, classe.reglages, -1)}`)} suivant={() => nav(`/journal/${jourClasseSuivant(date, classe.reglages)}`)} auMilieu={() => nav(`/journal/${aujourdhui()}`)} />}
-      />
-      <Journee date={date} />
-    </>
+    <Journee
+      date={date}
+      retour={<Link to={`/journal?semaine=${iso(lundiDe(new Date(date + 'T12:00:00')))}`} className="mb-1 inline-flex items-center gap-1 text-sm font-bold text-bateau" title="Semaine"><CalendarDays className="size-4" /></Link>}
+      titre={maj1(fmtJour(date))}
+      sousTitre={periode ? <Badge>{periode.id} · S{semaineDansPeriode(date, periode)}</Badge> : undefined}
+      actions={<NavPas label="Jour" precedent={() => nav(`/journal/${jourClasseSuivant(date, classe.reglages, -1)}`)} suivant={() => nav(`/journal/${jourClasseSuivant(date, classe.reglages)}`)} auMilieu={() => nav(`/journal/${aujourdhui()}`)} />}
+    />
   )
 }
 
 function VueSemaine() {
   const classe = useClasse()
   const toast = useToast()
+  const nav = useNavigate()
   const rafraichir = useRafraichir()
   const params = new URLSearchParams(window.location.hash.split('?')[1] ?? '')
-  const [lundi, setLundi] = useState(() => params.get('semaine') ?? iso(lundiDe(new Date(aujourdhui() + 'T12:00:00'))))
-  const jours = joursSemaine(lundi, classe.reglages)
+  const [lundi, setLundi] = useState(() => params.get('semaine') ?? lundiCourant())
+  const jours = useMemo(() => joursSemaine(lundi, classe.reglages), [lundi, classe.reglages])
   const fin = decaler(lundi, 6)
   const seances = useSeances(lundi, fin)
   const devoirs = useDevoirsDonnes(lundi, fin)
@@ -75,47 +73,27 @@ function VueSemaine() {
     <>
       <Entete
         titre="Cahier journal"
-        sousTitre={periode ? <Badge>{periode.id} · semaine {semaineDansPeriode(lundi, periode)}</Badge> : undefined}
-        actions={<NavPas label={`Semaine du ${fmtCourtSansJour(lundi)}`} precedent={() => setLundi(decaler(lundi, -7))} suivant={() => setLundi(decaler(lundi, 7))} auMilieu={() => setLundi(iso(lundiDe(new Date(aujourdhui() + 'T12:00:00'))))} />}
+        sousTitre={periode ? <Badge>{periode.id} · S{semaineDansPeriode(lundi, periode)}</Badge> : undefined}
+        actions={<>
+          <BoutonIcone icone={Sparkles} label="Remplir la semaine avec ChatGPT" variante="secondaire" onClick={() => setIa({ type: 'semaine', lundi })} />
+          <BoutonIcone icone={CalendarPlus} label="Remplir depuis l'emploi du temps" variante="secondaire" onClick={remplirSemaine} disabled={remplissage} />
+          <BoutonIcone icone={Printer} label="Imprimer la semaine" variante="secondaire" onClick={() => { if (!imprimerCahierJournal(classe, jours, seances.data ?? [], devoirs.data ?? [])) toast('Autorise les fenêtres pour imprimer', 'erreur') }} />
+          <NavPas label={fmtCourtSansJour(lundi)} precedent={() => setLundi(decaler(lundi, -7))} suivant={() => setLundi(decaler(lundi, 7))} auMilieu={() => setLundi(lundiCourant())} />
+        </>}
       />
-      <div className="mb-4 flex flex-wrap gap-2">
-        <Bouton taille="s" variante="secondaire" icone={CalendarPlus} onClick={remplirSemaine} enCours={remplissage}>Remplir depuis l'emploi du temps</Bouton>
-        <Bouton taille="s" variante="secondaire" icone={Sparkles} onClick={() => setIa({ type: 'semaine', lundi })}>ChatGPT</Bouton>
-        <Bouton taille="s" variante="secondaire" icone={Printer} onClick={() => { if (!imprimerCahierJournal(classe, jours, seances.data ?? [], devoirs.data ?? [])) toast('Autorise les fenêtres pour imprimer', 'erreur') }}>Imprimer</Bouton>
-      </div>
       {seances.isLoading ? <Chargement /> : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {jours.map((j) => {
+        <CalendrierSemaine
+          jours={jours}
+          reglages={classe.reglages}
+          compte={(j) => parJour.get(j)?.length ?? 0}
+          actionJour={(j) => <BoutonIcone icone={Maximize2} label="Ouvrir la journée" className="size-8" onClick={() => nav(`/journal/${j}`)} />}
+          rendu={(j) => {
             const l = parJour.get(j) ?? []
-            const vac = vacancesDe(j, classe.reglages)
-            const classeCeJour = estJourClasse(j, classe.reglages)
-            const nbDevoirs = (devoirs.data ?? []).filter((d) => d.donne_le === j).length
-            return (
-              <Link key={j} to={`/journal/${j}`} className={clsx('flex flex-col rounded-3xl bg-white p-4 shadow-doux transition hover:-translate-y-0.5', j === aujourdhui() && 'ring-2 ring-bateau')}>
-                <div className="mb-3 flex items-baseline gap-2">
-                  <span className="font-titre text-3xl font-semibold leading-none">{fmtNumero(j)}</span>
-                  <span className="font-bold capitalize text-brume">{fmtJourSemaine(j)}</span>
-                  {nbDevoirs > 0 && <span className="ml-auto"><Badge couleur="succes">{nbDevoirs} devoir{nbDevoirs > 1 ? 's' : ''}</Badge></span>}
-                </div>
-                {!classeCeJour ? (
-                  <p className="rounded-2xl bg-ambre-clair px-3 py-2 text-sm font-bold text-ambre-fonce">{vac ? vac.nom : 'Pas classe'}</p>
-                ) : l.length ? (
-                  <ul className="flex flex-col gap-1.5">
-                    {l.map((s) => (
-                      <li key={s.id} className={clsx('flex items-center gap-2 text-sm', s.statut === 'non_faite' && 'text-brume line-through')}>
-                        <span className="w-10 shrink-0 text-right text-xs font-bold tabular-nums text-brume">{fmtHeure(s.debut)}</span>
-                        <PastilleMatiere id={s.matiere} taille="s" />
-                        <span className="min-w-0 flex-1 truncate font-bold">{s.titre}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-brume">Vide</p>
-                )}
-              </Link>
-            )
-          })}
-        </div>
+            return l.length
+              ? l.map((s) => <CarteSeance key={s.id} s={s} compacte onOuvrir={() => nav(`/journal/${j}`)} />)
+              : <button type="button" onClick={() => nav(`/journal/${j}`)} className="rounded-2xl border-2 border-dashed border-trait py-6 text-brume" aria-label="Préparer la journée"><CalendarPlus className="mx-auto size-6" /></button>
+          }}
+        />
       )}
       <AssistantIA demande={ia} onFermer={() => setIa(null)} />
     </>

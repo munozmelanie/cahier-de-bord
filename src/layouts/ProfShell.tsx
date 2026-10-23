@@ -1,13 +1,12 @@
 import clsx from 'clsx'
 import {
-  BookCheck, CalendarDays, CalendarRange, ClipboardCheck, GraduationCap, Layers, ListChecks, LogOut, Menu,
-  MessagesSquare, NotebookPen, Settings, Sparkles, Sun, Users, type LucideIcon,
+  BookCheck, CalendarDays, CalendarRange, ClipboardCheck, GraduationCap, Layers, LayoutGrid, ListChecks, LogOut,
+  MessagesSquare, NotebookPen, Sailboat, Settings, Sparkles, Sun, Users, type LucideIcon,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { Feuille } from '../components/ui'
 import { BandeauDemo } from '../components/BandeauDemo'
-import { Logo } from '../components/Logo'
 import { useLectures, useMessages } from '../lib/donnees'
 import { useSession } from '../lib/session'
 import { MODE_DEMO } from '../lib/supabase'
@@ -47,89 +46,102 @@ function useNonLus() {
   }, [msgs.data, lect.data, userId])
 }
 
-function Element({ l, nonLus, onClick }: { l: Lien; nonLus?: number; onClick?: () => void }) {
+const COULEURS: Record<string, [string, string]> = {
+  '/edt': ['#0A8FD6', '#E0F3FD'], '/progressions': ['#13A35B', '#E1F6EA'], '/sequences': ['#7B4DFF', '#EEE8FF'],
+  '/evaluations': ['#F2711C', '#FFEEDF'], '/lsu': ['#2E5BFF', '#E6ECFF'], '/agenda': ['#E0457B', '#FDE8F0'],
+  '/eleves': ['#B9770E', '#FCF0D9'], '/ia': ['#C135D8', '#F8E6FB'], '/reglages': ['#4F5D7A', '#E9ECF3'],
+}
+
+/** Icône de la barre latérale, avec son nom en bulle au survol */
+function Element({ l, nonLus }: { l: Lien; nonLus?: number }) {
   const Icone = l.icone
   return (
     <NavLink
       to={l.to}
       end={l.fin}
-      onClick={onClick}
-      className={({ isActive }) => clsx('flex items-center gap-3 rounded-2xl px-3 py-2 font-bold transition',
-        isActive ? 'bg-white text-bateau shadow-doux' : 'text-encre/75 hover:bg-white/60 hover:text-encre')}
+      aria-label={l.label}
+      className={({ isActive }) => clsx('group relative flex size-12 items-center justify-center rounded-2xl transition',
+        isActive ? 'bg-bateau text-white shadow-doux' : 'text-encre/60 hover:bg-white hover:text-encre')}
     >
-      <Icone className="size-5 shrink-0" />
-      <span className="flex-1 truncate">{l.label}</span>
-      {!!nonLus && <span className="rounded-full bg-alerte px-2 text-xs leading-5 text-white">{nonLus}</span>}
+      <Icone className="size-6" strokeWidth={2.1} />
+      {!!nonLus && <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-alerte px-1 text-center text-[11px] font-bold leading-5 text-white">{nonLus}</span>}
+      <span className="pointer-events-none absolute left-full z-50 ml-3 whitespace-nowrap rounded-xl bg-encre px-3 py-1.5 text-sm font-bold text-white opacity-0 shadow-flotte transition group-hover:opacity-100 group-focus-visible:opacity-100">
+        {l.label}
+      </span>
     </NavLink>
   )
 }
 
-function Groupe({ titre, liens, onClick }: { titre: string; liens: Lien[]; onClick?: () => void }) {
+/** Tuile du menu « Plus » (téléphone) */
+function Tuile({ l, onClick }: { l: Lien; onClick: () => void }) {
+  const Icone = l.icone
+  const [c, f] = COULEURS[l.to] ?? ['#2E5BFF', '#E6ECFF']
   return (
-    <div className="flex flex-col gap-1">
-      <p className="px-3 pb-1 pt-4 text-xs font-bold text-brume">{titre}</p>
-      {liens.map((l) => <Element key={l.to} l={l} onClick={onClick} />)}
-    </div>
+    <NavLink to={l.to} onClick={onClick} className="flex flex-col items-center gap-2 rounded-3xl bg-white p-3 text-center text-xs font-bold text-encre shadow-doux">
+      <span className="flex size-12 items-center justify-center rounded-2xl" style={{ background: f, color: c }}><Icone className="size-6" /></span>
+      {l.label.replace(' (LSU)', '').replace(' et familles', '').replace('ChatGPT / Claude', 'ChatGPT')}
+    </NavLink>
   )
 }
 
 export function ProfShell() {
-  const { classe, deconnexion } = useSession()
+  const { deconnexion } = useSession()
   const nonLus = useNonLus()
   const [plus, setPlus] = useState(false)
   const loc = useLocation()
   const dansPlus = [...PREPARATION, ...SUIVI, ...OUTILS].some((l) => loc.pathname.startsWith(l.to))
+  const separateur = <span className="my-1 h-px w-8 bg-trait" />
 
   return (
     <div className="min-h-dvh">
       <BandeauDemo />
-      {/* Barre latérale (ordinateur) */}
-      <aside className={clsx("fixed bottom-0 left-0 z-30 hidden", MODE_DEMO ? "top-9" : "top-0", " w-64 flex-col gap-1 overflow-y-auto border-r border-trait bg-[#EEF2FB] px-3 py-5 lg:flex")}>
-        <div className="mb-3 px-3"><Logo sousTitre={classe ? `${classe.nom} · ${classe.ecole ?? ''}` : undefined} /></div>
+      {/* Barre d'icônes (ordinateur) */}
+      <aside className={clsx('fixed bottom-0 left-0 z-30 hidden w-20 flex-col items-center gap-1.5 border-r border-trait bg-[#EEF2FB] py-4 lg:flex', MODE_DEMO ? 'top-9' : 'top-0')}>
+        <span className="mb-2 flex size-12 items-center justify-center rounded-2xl bg-encre text-white" title="Cahier de bord"><Sailboat className="size-6" /></span>
         {PRINCIPAUX.map((l) => <Element key={l.to} l={l} nonLus={l.to === '/carnet' ? nonLus : 0} />)}
-        <Groupe titre="Préparer" liens={PREPARATION} />
-        <Groupe titre="Suivre" liens={SUIVI} />
-        <Groupe titre="Outils" liens={OUTILS} />
-        <button onClick={deconnexion} className="mt-auto flex items-center gap-3 rounded-2xl px-3 py-2 font-bold text-brume hover:text-encre">
-          <LogOut className="size-5" /> Se déconnecter
+        {separateur}
+        {PREPARATION.map((l) => <Element key={l.to} l={l} />)}
+        {separateur}
+        {SUIVI.map((l) => <Element key={l.to} l={l} />)}
+        {separateur}
+        {OUTILS.map((l) => <Element key={l.to} l={l} />)}
+        <button onClick={deconnexion} aria-label="Se déconnecter" title="Se déconnecter" className="mt-auto flex size-12 items-center justify-center rounded-2xl text-brume hover:bg-white hover:text-encre">
+          <LogOut className="size-5" />
         </button>
       </aside>
 
-      <main className="px-[max(16px,env(safe-area-inset-left))] pb-28 pt-5 sm:px-6 lg:ml-64 lg:px-10 lg:pb-12 lg:pt-8">
+      <main className="px-[max(16px,env(safe-area-inset-left))] pb-28 pt-5 sm:px-6 lg:ml-20 lg:px-10 lg:pb-12 lg:pt-8">
         <div className="mx-auto max-w-6xl">
           <Outlet />
         </div>
       </main>
 
-      {/* Barre du bas (téléphone, tablette) */}
+      {/* Barre du bas (téléphone, tablette) : icônes seules */}
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-trait bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
-        <div className="mx-auto grid max-w-lg grid-cols-5">
+        <div className="mx-auto grid max-w-lg grid-cols-5 px-2 py-1.5">
           {PRINCIPAUX.map((l) => {
             const Icone = l.icone
             return (
-              <NavLink key={l.to} to={l.to} end={l.fin}
-                className={({ isActive }) => clsx('relative flex flex-col items-center gap-0.5 py-2 text-[11px] font-bold', isActive ? 'text-bateau' : 'text-brume')}>
+              <NavLink key={l.to} to={l.to} end={l.fin} aria-label={l.label}
+                className={({ isActive }) => clsx('relative mx-auto flex size-12 items-center justify-center rounded-2xl transition', isActive ? 'bg-bateau text-white' : 'text-brume')}>
                 <Icone className="size-6" />
-                <span className="truncate">{l.label === 'Carnet de liaison' ? 'Carnet' : l.label === 'Cahier journal' ? 'Journal' : l.label}</span>
-                {l.to === '/carnet' && nonLus > 0 && <span className="absolute right-[22%] top-1 rounded-full bg-alerte px-1.5 text-[10px] leading-4 text-white">{nonLus}</span>}
+                {l.to === '/carnet' && nonLus > 0 && <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-alerte px-1 text-center text-[11px] font-bold leading-5 text-white">{nonLus}</span>}
               </NavLink>
             )
           })}
-          <button onClick={() => setPlus(true)} className={clsx('flex flex-col items-center gap-0.5 py-2 text-[11px] font-bold', dansPlus ? 'text-bateau' : 'text-brume')}>
-            <Menu className="size-6" /> Plus
+          <button onClick={() => setPlus(true)} aria-label="Plus" className={clsx('mx-auto flex size-12 items-center justify-center rounded-2xl', dansPlus ? 'bg-bateau text-white' : 'text-brume')}>
+            <LayoutGrid className="size-6" />
           </button>
         </div>
       </nav>
 
-      <Feuille ouverte={plus} onFermer={() => setPlus(false)} titre="Menu">
-        <div className="grid gap-1 pb-2">
-          <Groupe titre="Préparer" liens={PREPARATION} onClick={() => setPlus(false)} />
-          <Groupe titre="Suivre" liens={SUIVI} onClick={() => setPlus(false)} />
-          <Groupe titre="Outils" liens={OUTILS} onClick={() => setPlus(false)} />
-          <button onClick={deconnexion} className="mt-3 flex items-center gap-3 rounded-2xl px-3 py-2 font-bold text-brume">
-            <LogOut className="size-5" /> Se déconnecter
-          </button>
+      <Feuille ouverte={plus} onFermer={() => setPlus(false)} titre="">
+        <div className="grid grid-cols-3 gap-3 pb-2">
+          {[...PREPARATION, ...SUIVI, ...OUTILS].map((l) => <Tuile key={l.to} l={l} onClick={() => setPlus(false)} />)}
         </div>
+        <button onClick={deconnexion} className="mx-auto mt-4 flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold text-brume">
+          <LogOut className="size-4" /> Déconnexion
+        </button>
       </Feuille>
     </div>
   )
