@@ -20,7 +20,7 @@ export function imprimerCodes(eleves: Eleve[], classe: Classe) {
           <ol>
             <li>Scannez le QR code avec l'appareil photo du téléphone.</li>
             <li>Créez votre compte : le code est déjà rempli.</li>
-            <li>Installez l'appli : elle vous montre comment.</li>
+            <li>Installez l'appli en suivant le tutoriel.</li>
           </ol>
         </div>
         <div class="qr">${qrSvg(lienFamille(e.code_famille))}</div>
