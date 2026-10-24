@@ -2,6 +2,7 @@ import { KeyRound, LogOut } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Logo } from '../../components/Logo'
+import { CarteInstallation } from '../../components/CarteInstallation'
 import { Bouton, Champ, Erreur, Liste, Saisie } from '../../components/ui'
 import { db, traduireErreur } from '../../lib/supabase'
 import { useSession } from '../../lib/session'
@@ -105,6 +106,7 @@ export default function Relier() {
     <div className="flex min-h-dvh flex-col items-center px-4 py-10">
       <div className="w-full max-w-md">
         <div className="mb-8 flex justify-center"><Logo /></div>
+        <CarteInstallation depuisQr={!!codeLien && !estCodeEnseignant(codeLien)} className="mb-5" />
         <form onSubmit={envoyer} className="flex flex-col gap-4 rounded-3xl bg-white p-6 shadow-doux sm:p-8">
           <div className="flex items-center gap-3">
             <span className="flex size-11 items-center justify-center rounded-2xl bg-bateau-clair text-bateau"><KeyRound className="size-6" /></span>

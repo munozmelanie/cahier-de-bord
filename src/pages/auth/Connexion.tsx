@@ -2,10 +2,11 @@ import { FlaskConical, KeyRound, LogIn, Mail, NotebookPen, UserPlus, Users } fro
 import { useEffect, useState, type FormEvent } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Logo } from '../../components/Logo'
+import { CarteInstallation } from '../../components/CarteInstallation'
 import { Bouton, Champ, Erreur, Onglets, Saisie } from '../../components/ui'
 import { db, MODE_DEMO, traduireErreur } from '../../lib/supabase'
 import { useSession } from '../../lib/session'
-import { ChampsCode, codeDuLien, nomComplet } from './Relier'
+import { ChampsCode, codeDuLien, estCodeEnseignant, nomComplet } from './Relier'
 
 export default function Connexion() {
   const codeLien = codeDuLien(useLocation().pathname)
@@ -18,6 +19,7 @@ export default function Connexion() {
     <div className="flex min-h-dvh flex-col items-center px-4 py-10">
       <div className="w-full max-w-md">
         <div className="mb-8 flex justify-center"><Logo /></div>
+        <CarteInstallation depuisQr={!!codeLien && !estCodeEnseignant(codeLien)} className="mb-5" />
         <div className="rounded-3xl bg-white p-6 shadow-doux sm:p-8">
           <div className="mb-6 flex justify-center">
             <Onglets valeur={mode} onChange={setMode} options={[

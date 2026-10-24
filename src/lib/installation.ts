@@ -8,6 +8,7 @@ import { APERCU } from './supabase'
 type EvenementInstallation = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }> }
 
 let differe: EvenementInstallation | null = null
+let installationTerminee = false
 const abonnes = new Set<() => void>()
 const prevenir = () => abonnes.forEach((f) => f())
 
@@ -17,7 +18,7 @@ if (typeof window !== 'undefined') {
     differe = e as EvenementInstallation
     prevenir()
   })
-  window.addEventListener('appinstalled', () => { differe = null; prevenir() })
+  window.addEventListener('appinstalled', () => { differe = null; installationTerminee = true; prevenir() })
   // Service worker : nécessaire pour l'installation sur Android (pas dans l'aperçu)
   if (!APERCU && 'serviceWorker' in navigator && location.protocol === 'https:') {
     window.addEventListener('load', () => {
@@ -43,18 +44,25 @@ export function useInstallation() {
     return () => { abonnes.delete(f) }
   }, [])
   return {
-    installee: estInstallee(),
+    installee: installationTerminee || estInstallee(),
     iphone: estIphone(),
     telephone: estTelephone(),
     /** Android : le bouton « Installer » peut ouvrir la fenêtre du navigateur */
     peutInstaller: !!differe,
     installer: async () => {
-      if (!differe) return false
-      await differe.prompt()
-      const { outcome } = await differe.userChoice
+      const evenement = differe
+      if (!evenement) return false
+      // Une invite ne peut être utilisée qu’une fois, même en cas de double clic.
       differe = null
       prevenir()
-      return outcome === 'accepted'
+      try {
+        await evenement.prompt()
+        const { outcome } = await evenement.userChoice
+        return outcome === 'accepted'
+      } catch {
+        // Si le navigateur refuse l’invite, le tutoriel reste disponible.
+        return false
+      }
     },
   }
 }

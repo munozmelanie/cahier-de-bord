@@ -1,0 +1,78 @@
+{
+  "device": "iPhone 17",
+  "runtime": "iOS 27.0",
+  "browser": "Safari",
+  "captureDate": "2026-10-23",
+  "sourceUrl": "https://munozmelanie.github.io/cahier-de-bord/",
+  "authentic": true,
+  "syntheticProfile": true,
+  "complete": true,
+  "steps": [
+    {
+      "file": "ios-1.png",
+      "caption": "Touchez le menu de la page en bas de Safari.",
+      "target": {
+        "x": 28.358,
+        "y": 93.364
+      },
+      "nativeLabel": "Menu de la page",
+      "width": 1206,
+      "height": 2622
+    },
+    {
+      "file": "ios-2.png",
+      "caption": "Touchez « Partager ».",
+      "target": {
+        "x": 53.483,
+        "y": 47.368
+      },
+      "nativeLabel": "Partager",
+      "width": 1206,
+      "height": 2622
+    },
+    {
+      "file": "ios-3.png",
+      "caption": "Si les actions sont réduites, touchez « En voir plus ».",
+      "target": {
+        "x": 82.753,
+        "y": 89.455
+      },
+      "nativeLabel": "En voir plus",
+      "width": 1206,
+      "height": 2622
+    },
+    {
+      "file": "ios-4.png",
+      "caption": "Touchez « Sur l’écran d’accueil ».",
+      "target": {
+        "x": 50,
+        "y": 74.733
+      },
+      "nativeLabel": "Sur l’écran d’accueil",
+      "width": 1206,
+      "height": 2622
+    },
+    {
+      "file": "ios-5.png",
+      "caption": "Gardez « Ouvrir comme app web » activé.",
+      "target": {
+        "x": 87.189,
+        "y": 35.202
+      },
+      "nativeLabel": "Ouvrir comme app web",
+      "width": 1206,
+      "height": 2622
+    },
+    {
+      "file": "ios-6.png",
+      "caption": "Touchez « Ajouter » : l’icône sera sur votre écran d’accueil.",
+      "target": {
+        "x": 84.784,
+        "y": 11.442
+      },
+      "nativeLabel": "Ajouter",
+      "width": 1206,
+      "height": 2622
+    }
+  ]
+}

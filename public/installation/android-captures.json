@@ -1,0 +1,56 @@
+{
+  "device": "Android Emulator CahierCaptures",
+  "runtime": "Android 16 (API 36)",
+  "browser": "Chrome 133.0.6943.137",
+  "captureDate": "2026-10-24",
+  "sourceUrl": "https://munozmelanie.github.io/cahier-de-bord/",
+  "authentic": true,
+  "syntheticProfile": true,
+  "complete": true,
+  "steps": [
+    {
+      "file": "android-1.png",
+      "caption": "Touchez le menu ⋮ en haut à droite de Chrome.",
+      "target": {
+        "x": 94.167,
+        "y": 5.688
+      },
+      "nativeLabel": "Personnaliser et contrôler Google Chrome",
+      "width": 720,
+      "height": 1600
+    },
+    {
+      "file": "android-2.png",
+      "caption": "Touchez « Ajouter à l’écran d’accueil ».",
+      "target": {
+        "x": 69.722,
+        "y": 67.375
+      },
+      "nativeLabel": "Ajouter à l'écran d'accueil",
+      "width": 720,
+      "height": 1600
+    },
+    {
+      "file": "android-3.png",
+      "caption": "Choisissez « Installer ».",
+      "target": {
+        "x": 86.806,
+        "y": 83.188
+      },
+      "nativeLabel": "Installer",
+      "width": 720,
+      "height": 1600
+    },
+    {
+      "file": "android-4.png",
+      "caption": "Confirmez avec « Installer ».",
+      "target": {
+        "x": 82.917,
+        "y": 59.5
+      },
+      "nativeLabel": "Installer",
+      "width": 720,
+      "height": 1600
+    }
+  ]
+}
